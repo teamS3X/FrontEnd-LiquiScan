@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { BarItem } from '@/components/BarItem';
 import { useState } from 'react';
+import { Button } from '@/components/Button';
 
 export default function Bars() {
     const [barras, setBarras] = useState([
@@ -49,6 +50,9 @@ export default function Bars() {
             prev.map(barra => (barra.id === barraId ? { ...barra, list: listId } : barra))
         );
     };
+    const handleCreateBar = () => {
+
+    }
     return (
         <View style={styles.container}>
             <Text style={styles.title}>
@@ -67,6 +71,9 @@ export default function Bars() {
                         lists={lists}
                     />
                 ))}
+            </View>
+            <View style={styles.buttonContainer}>
+                <Button title='Crear Barra' size='big' onPress={handleCreateBar} />
             </View>
         </View>
     );
@@ -92,5 +99,16 @@ const styles = StyleSheet.create({
     barsContainer: {
         marginInline: 60,
         marginTop: 60,
-    }
+    },
+    buttonContainer: {
+        height: 80,
+        backgroundColor: Colors.dark.background,
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 20,
+        borderTopWidth: 1,
+        borderColor: Colors.dark.text,
+    },
 });
