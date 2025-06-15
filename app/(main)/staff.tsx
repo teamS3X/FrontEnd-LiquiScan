@@ -1,45 +1,68 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { StaffItem } from '@/components/StaffItem';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/Button';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Para obtener id admin
+import { fetchBartendersPorAdminConBarra } from '@/utils/BartenderService';
 
 export default function Staff() {
-    const [staff, setStaff] = useState([
-        { id: 0, name: 'Many' },
-        { id: 1, name: 'Luna' },
-        { id: 2, name: 'Alma' },
-        { id: 3, name: 'Lizzy' },
-        { id: 4, name: 'Chica' },
-    ]);
+    const [staff, setStaff] = useState<{ id: number; name: string }[]>([]);
+
+    useEffect(() => {
+        const loadBartenders = async () => {
+            try {
+                const idString = await AsyncStorage.getItem('id');
+                const adminId = idString ? parseInt(idString, 10) : null;
+                if (adminId === null) throw new Error("ID de administrador no encontrado");
+
+                const bartendersData = await fetchBartendersPorAdminConBarra(adminId);
+
+                // Suponiendo que bartendersData viene con { id, nombre } 
+                // Adaptamos al formato {id, name}
+                const formatted = bartendersData.map((b: any) => ({
+                    id: b.id,
+                    name: b.nombre,
+                }));
+
+                setStaff(formatted);
+            } catch (error) {
+                console.error("Error cargando bartenders:", error);
+            }
+        };
+
+        loadBartenders();
+    }, []);
+
     const renamePerson = (id: number, newName: string) => {
         setStaff(prev =>
             prev.map(person => (person.id === id ? { ...person, name: newName } : person))
         );
     };
+
     const deletePerson = (id: number) => {
         setStaff(prev => prev.filter(person => person.id !== id));
     };
-    const handleCreateStaff = () => {
 
-    }
+    const handleCreateStaff = () => {
+        // Aquí puedes poner la lógica para crear un bartender
+        // Por ejemplo abrir un modal, o navegar a otro componente
+    };
+
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>
-                Personal
-            </Text>
+            <Text style={styles.title}>Personal</Text>
             <View style={styles.barsContainer}>
                 {staff.map((item, index) => (
                     <StaffItem
                         key={item.id}
                         title={item.name}
-                        isLastItem={index === (staff.length - 1)}
+                        isLastItem={index === staff.length - 1}
                         onDelete={() => deletePerson(item.id)}
                         onRename={(newName) => renamePerson(item.id, newName)}
                     />
                 ))}
             </View>
-
             <View style={styles.buttonContainer}>
                 <Button title='Crear Bartender' size='big' onPress={handleCreateStaff} />
             </View>
@@ -61,7 +84,7 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         borderBottomWidth: 1,
         fontSize: 24,
-        fontWeight: 500,
+        fontWeight: '500',
         borderColor: Colors.dark.text,
     },
     barsContainer: {
