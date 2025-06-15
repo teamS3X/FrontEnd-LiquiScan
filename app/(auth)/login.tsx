@@ -16,13 +16,13 @@ export default function LoginScreen() {
             });
             router.replace('/(main)');
         } catch (error) {
-            Alert.alert('Error', 'Invalid credentials');
+            Alert.alert('Error', 'Credenciales inválidas');
         }
     };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Login</Text>
+            <Text style={styles.title}>Login de Administrador</Text>
             <TextInput
                 style={styles.input}
                 placeholder="Email"
@@ -42,7 +42,12 @@ export default function LoginScreen() {
                 <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/register')}>
-                <Text style={styles.link}>Don't have an account? Register</Text>
+                <Text style={styles.link}>¿No tienes una cuenta? Regístrate</Text>
+            </TouchableOpacity>
+
+            {/* --- ENLACE AÑADIDO --- */}
+            <TouchableOpacity onPress={() => router.push('/bartenderLogin')}>
+                <Text style={styles.link}>¿Eres Bartender? Ingresa aquí</Text>
             </TouchableOpacity>
         </View>
     );
@@ -88,4 +93,4 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 15,
     },
-}); 
+});
