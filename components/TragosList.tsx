@@ -1,25 +1,16 @@
-import { View, TouchableOpacity, Image, Text, StyleSheet, ImageSourcePropType } from 'react-native';
-import { Colors } from '@/constants/Colors';
 import { TragosListItem } from '@/components/TragosListItem';
-import { ScrollView } from 'react-native-gesture-handler';
+import { Colors } from '@/constants/Colors';
+import { Drink } from '@/types/drinks';
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 
-type Drink = {
-    id: number,
-    title: string,
-    image: string,
-}
 interface ListProps {
     title: string;
     selectedList: Drink[];
     setSelected: any,
-    list: Drink[],
+    list: any,
 }
-export const TragosList = ({
-    title,
-    selectedList,
-    setSelected,
-    list,
-}: ListProps) => {
+
+export const TragosList = ({ title, selectedList, setSelected, list }: ListProps) => {
     const addItemToSelected = (item: Drink) => {
         const exists = selectedList.some(drink => drink.id === item.id);
         if (!exists) {
@@ -30,28 +21,28 @@ export const TragosList = ({
             setSelected(newSelected);
         }
     };
-
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>
-                {title}
-            </Text>
+            <Text style={styles.title}>{title}</Text>
             <ScrollView horizontal style={styles.scrollContainer}>
                 <View style={styles.innerContainer}>
-                    {list.map((item, index) => (
-                        <TouchableOpacity onPress={() => addItemToSelected(item)}>
+                    {list.map((item: any) => (
+                        <TouchableOpacity
+                            key={item.id}
+                            onPress={() => addItemToSelected(item)}
+                        >
                             <TragosListItem
-                                key={index}
-                                title={item.title}
-                                selected={selectedList.some(drink => drink.id == item.id)}
+                                title={item.nombre}
+                                selected={selectedList.some(drink => drink.id === item.id)}
+                                path={item.imagen}
                             />
                         </TouchableOpacity>
                     ))}
                 </View>
-            </ScrollView >
-        </View >
+            </ScrollView>
+        </View>
     );
-}
+};
 
 const styles = StyleSheet.create({
     container: {
