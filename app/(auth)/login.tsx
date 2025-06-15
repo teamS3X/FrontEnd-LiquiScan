@@ -45,7 +45,7 @@ export default function LoginScreen() {
                 <Text style={styles.link}>¿No tienes una cuenta? Regístrate</Text>
             </TouchableOpacity>
 
-            {/* --- ENLACE AÑADIDO --- */}
+            {/* --- Este es el enlace que debe aparecer --- */}
             <TouchableOpacity onPress={() => router.push('/bartenderLogin')}>
                 <Text style={styles.link}>¿Eres Bartender? Ingresa aquí</Text>
             </TouchableOpacity>

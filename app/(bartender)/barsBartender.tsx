@@ -63,7 +63,7 @@ export default function BarsBartender() {
     );
 }
 
-// ... (los estilos se mantienen igual)
+
 const styles = StyleSheet.create({
     container: {
         minHeight: '100%',

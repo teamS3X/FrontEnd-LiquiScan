@@ -4,7 +4,7 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 // Importamos los nuevos tipos y funciones renombradas
 import { saveBartenderSession, BartenderSession } from '@/utils/session'; 
 
-const API_URL = 'http://192.168.1.100:8000'; // ¡Recuerda usar tu IP!
+const API_URL = 'http://localhost:8000'; 
 
 export default function BartenderLoginScreen() {
     const [nombre, setNombre] = useState('');

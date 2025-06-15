@@ -85,6 +85,10 @@ export default function Index() {
                     <Text style={styles.textForgot}>Olvidé mi contraseña</Text>
                 </TouchableOpacity>
             </View>
+            {/* --- Este es el enlace que debe aparecer --- */}
+                        <TouchableOpacity onPress={() => router.push('/bartenderLogin')}>
+                            <Text style={styles.link}>¿Eres Bartender? Ingresa aquí</Text>
+                        </TouchableOpacity>
         </View>
     );
 }
@@ -112,6 +116,11 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         paddingBlock: 10,
         fontWeight: 600,
+    },
+    link: {
+        color: '#4CAF50',
+        textAlign: 'center',
+        marginTop: 15,
     }
 });
 
