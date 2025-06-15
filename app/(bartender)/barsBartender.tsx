@@ -2,53 +2,59 @@ import { View, ScrollView, Text, StyleSheet, TouchableOpacity } from 'react-nati
 import { Colors } from '@/constants/Colors';
 import { Button } from '@/components/Button';
 import { router } from 'expo-router';
-import { clearSession } from '@/utils/session';
+import { useEffect, useState } from 'react';
+// 1. CORRECCIÓN EN LA IMPORTACIÓN: Se importa 'BartenderSession' en lugar de 'Session'.
+import { Bar, BartenderSession, clearBartenderSession, getBartenderSession } from '@/utils/session';
 
-export default function barsBartender() {
-    const barras = [
-        { id: 0, name: 'Barra Norte', list: 1 },
-        { id: 1, name: 'Barra Sur', list: 2 },
-        { id: 2, name: 'Barra Central', list: 3 },
-        { id: 3, name: 'Barra del Mar', list: 4 },
-        { id: 4, name: 'Barra Andina', list: 5 },
-        { id: 5, name: 'Barra del Puerto', list: 4 },
-        { id: 6, name: 'Barra Altiplánica', list: 3 },
-        { id: 7, name: 'Barra Estación', list: 5 },
-        { id: 8, name: 'Barra de la Bahía', list: 6 },
-        { id: 10, name: 'Barra Cordillerana 1', list: 1 },
-        { id: 11, name: 'Barra Cordillerana 2', list: 1 },
-        { id: 12, name: 'Barra Cordillerana 3', list: 3 },
-        { id: 13, name: 'Barra Cordillerana 4', list: 4 },
-        { id: 14, name: 'Barra Cordillerana 5', list: 5 },
-        { id: 15, name: 'Barra Cordillerana 6', list: 3 },
-        { id: 16, name: 'Barra Cordillerana 7', list: 1 },
-        { id: 17, name: 'Barra Cordillerana 8', list: 2 },
-        { id: 18, name: 'Barra Cordillerana 9', list: 1 },
-    ];
+export default function BarsBartender() {
+    const [barras, setBarras] = useState<Bar[]>([]);
+
+    useEffect(() => {
+        const loadBarsData = async () => {
+            // 2. CORRECCIÓN EN LA ANOTACIÓN DE TIPO: Se usa 'BartenderSession'.
+            const session: BartenderSession | null = await getBartenderSession();
+            
+            if (session?.bars) {
+                setBarras(session.bars);
+            }
+        };
+        loadBarsData();
+    }, []);
+    
     const handleLogout = async () => {
-        await clearSession();
-        router.replace('/');
-    }
-    const handleItemPress = (barra: { id: number, name: string, list: number }) => {
-        if (!barra.list || barra.list == undefined) {
-            console.log('Error: Not valid lists has been asigned to this bar');
+        await clearBartenderSession();
+        router.replace('/'); 
+    };
+
+    const handleItemPress = (barra: Bar) => {
+        if (!barra.idlista) {
+            console.log('Error: Esta barra no tiene una lista asignada.');
+            return;
         }
-        router.push({ pathname: '/stock', params: { listId: barra.list, barId: barra.id, barTitle: barra.name } });
-    }
+        router.push({ 
+            pathname: '/stock', 
+            params: { listId: barra.idlista, barId: barra.id, barTitle: barra.nombrebarra } 
+        });
+    };
+
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>
-                Barras
-            </Text>
-            <Text style={styles.textIntrucction}>  Selecciona una barra para realizar inventario</Text>
+            <Text style={styles.title}>Selecciona tu Barra</Text>
+            <Text style={styles.textIntrucction}>Elige una barra para realizar el inventario</Text>
             <ScrollView style={styles.barsContainer}>
-                {
+                {barras.length > 0 ? (
                     barras.map((barra) => (
-                        <TouchableOpacity style={styles.itemContainer} key={barra.id} onPress={() => { handleItemPress(barra) }}>
-                            <Text style={styles.text}>{barra.name}</Text>
+                        <TouchableOpacity 
+                            style={styles.itemContainer} 
+                            key={barra.id} 
+                            onPress={() => handleItemPress(barra)}
+                        >
+                            <Text style={styles.text}>{barra.nombrebarra}</Text>
                         </TouchableOpacity>
                     ))
-                }
+                ) : (
+                    <Text style={styles.text}>Cargando barras disponibles...</Text>
+                )}
             </ScrollView>
             <View style={styles.buttonContainer}>
                 <Button title='Salir' variant='secondary' onPress={handleLogout} />
@@ -57,6 +63,7 @@ export default function barsBartender() {
     );
 }
 
+// ... (los estilos se mantienen igual)
 const styles = StyleSheet.create({
     container: {
         minHeight: '100%',
@@ -72,7 +79,7 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         borderBottomWidth: 1,
         fontSize: 24,
-        fontWeight: 700,
+        fontWeight: '700',
         borderColor: Colors.dark.text,
     },
     barsContainer: {
@@ -99,7 +106,7 @@ const styles = StyleSheet.create({
         color: Colors.dark.text,
         textAlign: 'center',
         marginBlock: 20,
-        fontWeight: 700,
+        fontWeight: '700',
         textTransform: 'uppercase',
     },
     buttonContainer: {
