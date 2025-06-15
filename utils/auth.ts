@@ -89,6 +89,11 @@ export const loginUser = async (credentials: LoginCredentials): Promise<AuthResp
         await AsyncStorage.setItem('token', data.token);
         console.log('Token stored successfully');
 
+        // Store the token
+        await AsyncStorage.setItem('id', data.user.id);
+        console.log('id stored successfully');
+
+
         // Log the user data to see its structure
         console.log('User data from response:', data.user);
 

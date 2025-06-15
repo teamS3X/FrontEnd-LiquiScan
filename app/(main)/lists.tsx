@@ -7,7 +7,9 @@ import { Input } from '@/components/Input';
 import { Dropdown } from '@/components/Dropdown';
 import { Pin } from '@/components/Pin';
 import { Drink } from '@/types/drinks';
-import { createList, fetchAlcoholes, saveAlcoholListRelation } from '@/utils/listsService';
+import { createList, fetchAlcoholes, saveAlcoholListRelation, fetchListsByAdmin, fetchAlcoholListRelationsByListId} from '@/utils/listsService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function Lists() {
     const { width, height } = useWindowDimensions();
@@ -18,9 +20,15 @@ export default function Lists() {
     const [drinkslist, setDrinksList] = useState<Drink[]>([]);
 
     const [categories, setCategories] = useState<string[]>([]);
-
+    const [idadmin, setidadmin] = useState<number | null>(null);
 
     useEffect(() => {
+        const getid = async () =>{
+            const idString = await AsyncStorage.getItem('id');
+            const idadmin = idString ? parseInt(idString, 10) : null;
+            setidadmin(idadmin);
+        }
+        getid();
         const loadDrinks = async () => {
             try {
                 const data = await fetchAlcoholes();
@@ -48,8 +56,40 @@ export default function Lists() {
     const [selected, setSelected] = useState<Drink[]>([]);
     const [newListName, setNewListName] = useState('');
 
+    useEffect(() => {
+        const fetchLists = async () => {
+            if (idadmin !== null) {
+                try {
+                    console.log("Fetching lists for admin id:", idadmin);
+                    const listsData = await fetchListsByAdmin(idadmin);
+                    console.log("Fetched lists data:", listsData);
+
+                    // For each list, fetch its alcohol relations and add items property
+                    const listsWithItems = await Promise.all(
+                        listsData.map(async (list: any) => {
+                            const relations = await fetchAlcoholListRelationsByListId(list.id);
+                            // Assuming relations contain idalcohol, map to Drink objects or ids
+                            // For now, just store the idalcohols as items
+                            const items = relations.map((rel: any) => ({ id: rel.idalcohol }));
+                            return {
+                                id: list.id,
+                                title: list.nombre, // map nombre to title for Dropdown
+                                items: items,
+                            };
+                        })
+                    );
+
+                    setLists(listsWithItems);
+                } catch (error) {
+                    console.error("Failed to fetch lists by admin:", error);
+                }
+            }
+        };
+        fetchLists();
+    }, [idadmin]);
+
     const selectedList = selectedListId != null
-        ? lists.find(list => list.id === selectedListId)
+        ? lists.find(list => list.id === selectedListId) ?? null
         : null;
 
     const selectedTragos = selectedList ? selectedList.items : selected;
@@ -59,7 +99,7 @@ export default function Lists() {
             console.log('Ingresa nombre de la nueva lista');
             return;
         };
-        const idList = await createList({ nombre: newListName });
+        const idList = await createList({ nombre: newListName , idadministrador: idadmin});
         selected.forEach((s) => {
             console.log("idLista:", idList.id);
             console.log('idTrago:', s.id)
@@ -104,7 +144,7 @@ export default function Lists() {
                     <Button title='Seleccionar todos' variant='secondary' size='small' onPress={() => console.log('todos')} />
                     <Button title='Deseleccionar todos' variant='secondary' size='small' onPress={() => console.log('ninguno')} />
                 </View>
-                <Pin pin={1234} />
+                <Pin />
             </View>
             <ScrollView style={styles.container}>
                 {categories.map((c: string) => (
