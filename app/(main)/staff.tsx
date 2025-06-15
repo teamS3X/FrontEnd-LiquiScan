@@ -41,7 +41,7 @@ export default function Staff() {
             </View>
 
             <View style={styles.buttonContainer}>
-                <Button title='Crear Barra' size='big' onPress={handleCreateStaff} />
+                <Button title='Crear Bartender' size='big' onPress={handleCreateStaff} />
             </View>
         </View>
     );
