@@ -1,29 +1,31 @@
-import { View, TouchableOpacity, Image, Text, StyleSheet, ImageSourcePropType } from 'react-native';
+import { View, Image, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/Colors';
-
 
 interface ItemProps {
     title: string;
-    path?: ImageSourcePropType;
+    path?: string; // ahora solo string, porque es URL
     selected?: boolean;
 }
+
 export const TragosListItem = ({
     title,
-    path = require('@/assets/images/trago.jpg'),
+    path,
     selected = false,
 }: ItemProps) => {
+    const fallbackImage = require('@/assets/images/trago.jpg');
+
     return (
         <View style={styles.container}>
             <Image
-                source={path}
+                source={path ? { uri: path } : fallbackImage}
                 style={styles.image}
+                defaultSource={fallbackImage} // opcional, en iOS funciona como previsualización
             />
             <Text style={styles.text}>{title}</Text>
-            <View style={[styles.checkBox, selected ? styles.checkSelected : styles.checkUnselected]}></View>
+            <View style={[styles.checkBox, selected ? styles.checkSelected : styles.checkUnselected]} />
         </View>
     );
-}
-
+};
 const styles = StyleSheet.create({
     container: {
         borderWidth: 1,

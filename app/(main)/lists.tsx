@@ -1,131 +1,46 @@
 import { View, Text, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { TragosList } from '@/components/TragosList';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Dropdown } from '@/components/Dropdown';
 import { Pin } from '@/components/Pin';
+import { Drink } from '@/types/drinks';
+import { createList, fetchAlcoholes, saveAlcoholListRelation } from '@/utils/listsService';
 
-
-type Drink = {
-    id: number,
-    title: string,
-    image: string,
-}
 export default function Lists() {
     const { width, height } = useWindowDimensions();
     const [showModal, setShowModal] = useState(false);
     const [editedListItems, setEditedListItems] = useState<Drink[]>([]);
     const [unsavedChanges, setUnsavedChanges] = useState(false);
-    const piscos = [
-        {
-            id: 0,
-            title: "Pisco Mistral 46° 750cc",
-            image: "https://images.unsplash.com/photo-1605296867304-46d5465a13f1",
-        },
-        {
-            id: 1,
-            title: "Pisco Alto del Carmen 40° 700cc",
-            image: "https://images.unsplash.com/photo-1610641812407-0b1a5c3a6f2f",
-        },
-        {
-            id: 2,
-            title: "Pisco Capel Reservado 35° 1L",
-            image: "https://images.unsplash.com/photo-1559181567-c3190ca9959b",
-        },
-        {
-            id: 3,
-            title: "Pisco Control C 40° 750cc",
-            image: "https://images.unsplash.com/photo-1564758866819-71f08c1b6b2d",
-        },
-        {
-            id: 4,
-            title: "Pisco Horcón Quemado 46° 700cc",
-            image: "https://images.unsplash.com/photo-1603052877778-b0c7b7a6c0e0",
-        },
-        {
-            id: 5,
-            title: "Pisco Fundo Los Nichos 40° 750cc",
-            image: "https://images.unsplash.com/photo-1612036784852-0a7b1fd8b93e",
-        },
-    ];
 
-    const rones = [
-        {
-            id: 6,
-            title: "Ron Abuelo Añejo 7 años 750cc",
-            image: "https://images.unsplash.com/photo-1605276375725-f6c4213c9d84",
-        },
-        {
-            id: 7,
-            title: "Ron Diplomático Reserva Exclusiva 700cc",
-            image: "https://images.unsplash.com/photo-1620325811374-9a0187ac9c80",
-        },
-        {
-            id: 8,
-            title: "Ron Bacardí Carta Blanca 1L",
-            image: "https://images.unsplash.com/photo-1605187167395-78e9de04b6e6",
-        },
-        {
-            id: 9,
-            title: "Ron Havana Club Añejo Especial 750cc",
-            image: "https://images.unsplash.com/photo-1631049003743-5e3ff535c44c",
-        },
-        {
-            id: 10,
-            title: "Ron Barceló Gran Añejo 700cc",
-            image: "https://images.unsplash.com/photo-1623437681863-04b5f438c5a9",
-        },
-        {
-            id: 11,
-            title: "Ron Zacapa Centenario 23 750cc",
-            image: "https://images.unsplash.com/photo-1625581697572-0cf6e73cb255",
-        },
-        {
-            id: 12,
-            title: "Ron Flor de Caña 12 años 750cc",
-            image: "https://images.unsplash.com/photo-1616094896936-43c1ff381cb4",
-        },
-    ];
+    const [drinkslist, setDrinksList] = useState<Drink[]>([]);
 
-    const vinos = [
-        {
-            id: 13,
-            title: "Vino Concha y Toro Reservado Cabernet Sauvignon 750cc",
-            image: "https://images.unsplash.com/photo-1584467735871-02f1d2700105",
-        },
-        {
-            id: 14,
-            title: "Vino Casillero del Diablo Carmenere 750cc",
-            image: "https://images.unsplash.com/photo-1582572840856-ff33aee2563b",
-        },
-        {
-            id: 15,
-            title: "Vino Santa Rita 120 Merlot 750cc",
-            image: "https://images.unsplash.com/photo-1562087967-9b9db63429ef",
-        },
-        {
-            id: 16,
-            title: "Vino Tarapacá Gran Reserva Etiqueta Negra 750cc",
-            image: "https://images.unsplash.com/photo-1528821121074-6c4c1a0a3c3f",
-        },
-        {
-            id: 17,
-            title: "Vino Emiliana Adobe Orgánico Syrah 750cc",
-            image: "https://images.unsplash.com/photo-1608568255182-308a5be3b36a",
-        },
-        {
-            id: 18,
-            title: "Vino Montes Alpha Cabernet Sauvignon 750cc",
-            image: "https://images.unsplash.com/photo-1514362545857-cd8563b7e83f",
-        },
-        {
-            id: 19,
-            title: "Vino Undurraga Aliwen Reserva Pinot Noir 750cc",
-            image: "https://images.unsplash.com/photo-1617191512914-6b6939b6c85d",
-        },
-    ];
+    const [categories, setCategories] = useState<string[]>([]);
+
+
+    useEffect(() => {
+        const loadDrinks = async () => {
+            try {
+                const data = await fetchAlcoholes();
+                const tempCategories = [...new Set(data.map((item: any) => item.categoria))] as string[];
+                setDrinksList(data);
+                setCategories(tempCategories);
+            } catch (error) {
+                console.error("Failed to load drinks:", error);
+            }
+        };
+        const loadLists = async () => {
+            try {
+
+            }
+            catch (error) {
+                console.error("Failed to load lists:", error);
+            }
+        }
+        loadDrinks();
+    }, []);
 
 
     const [lists, setLists] = useState<{ id: number; title: string; items: Drink[] }[]>([]);
@@ -139,19 +54,26 @@ export default function Lists() {
 
     const selectedTragos = selectedList ? selectedList.items : selected;
 
-    const handleSaveList = () => {
+    const handleSaveList = async () => {
         if (newListName === '') {
             console.log('Ingresa nombre de la nueva lista');
             return;
         };
-        const newList = {
-            title: newListName.trim(),
-            items: selected,
-            id: lists.length,
-        };
-        setLists(prev => [...prev, newList]);
+        const idList = await createList({ nombre: newListName });
+        selected.forEach((s) => {
+            console.log("idLista:", idList.id);
+            console.log('idTrago:', s.id)
+            saveAlcoholListRelation({ idlista: idList.id, idalcohol: s.id })
+        })
+        console.log(selected);
+        // const newList = {
+        // title: newListName.trim(),
+        // items: selected,
+        // id: lists.length,
+        // };
+        // setLists(prev => [...prev, newList]);
         setShowModal(false);
-        setSelectedListId(newList.id)
+        // setSelectedListId(newList.id)
         console.log('Save list', newListName);
     }
     const updateSelectedTragos = (updatedDrinks: Drink[]) => {
@@ -185,14 +107,16 @@ export default function Lists() {
                 <Pin pin={1234} />
             </View>
             <ScrollView style={styles.container}>
-                <TragosList
-                    title="Piscos"
-                    selectedList={selectedTragos}
-                    setSelected={updateSelectedTragos}
-                    list={piscos}
-                />
-                <TragosList title='Rones' selectedList={selected} setSelected={setSelected} list={rones} />
-                <TragosList title='Vinos' selectedList={selected} setSelected={setSelected} list={vinos} />
+                {categories.map((c: string) => (
+                    <TragosList
+                        key={c}
+                        title={c}
+                        selectedList={selectedTragos}
+                        setSelected={updateSelectedTragos}
+                        list={drinkslist.filter((item: any) => item.categoria === c)}
+                    />
+                ))}
+
             </ScrollView>
             {selectedListId !== null &&
                 <View style={styles.buttonContainer}>
@@ -221,9 +145,6 @@ export default function Lists() {
     );
 }
 
-export const options = {
-    title: 'Listas',
-}
 const styles = StyleSheet.create({
     container: {
         backgroundColor: Colors.dark.background,
