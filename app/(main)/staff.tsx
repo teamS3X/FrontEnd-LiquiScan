@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, ScrollView } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { StaffItem } from '@/components/StaffItem';
 import { useState, useEffect } from 'react';
@@ -92,7 +92,7 @@ export default function Staff() {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Personal</Text>
-            <View style={styles.barsContainer}>
+            <ScrollView style={styles.barsContainer}>
                 {staff.map((item, index) => (
                     <StaffItem
                         key={item.id}
@@ -102,7 +102,7 @@ export default function Staff() {
                         onRename={(newName) => renamePerson(item.id, newName)}
                     />
                 ))}
-            </View>
+            </ScrollView>
             <View style={styles.buttonContainer}>
                 <Button title='Crear Bartender' size='big' onPress={handleCreateStaff} />
             </View>
