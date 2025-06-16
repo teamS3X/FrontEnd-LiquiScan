@@ -23,14 +23,14 @@ export default function Index() {
         try {
             console.log('1. Starting login process...');
             console.log('2. Attempting login with:', { username, password });
-            
-            const { token, user } = await loginUser({ 
-                correoelectronico: username, 
-                contrasena: password 
+
+            const { token, user } = await loginUser({
+                correoelectronico: username,
+                contrasena: password
             });
-            
+
             console.log('3. Login response received:', { token, user });
-            
+
             if (!token) {
                 console.log('4. No token received, aborting');
                 setLoading(false);
@@ -69,9 +69,6 @@ export default function Index() {
 
     return (
         <View style={styles.container}>
-            <Text style={{ color: '#777777', marginBottom: 20 }}>
-                username: admin o bar
-            </Text>
             <View style={styles.inputContainer}>
                 <Input placeholder='Nombre de usuario' value={username} onChange={setUsername} />
                 <Input placeholder='Contraseña' variant='password' value={password} onChange={setPassword} />
@@ -79,16 +76,13 @@ export default function Index() {
             {error &&
                 <Text style={styles.textError}>Error en los datos</Text>
             }
-            <View style={{ marginTop: 50, display:'flex', alignItems:'center' }}>
+            <View style={{ marginTop: 50, display: 'flex', alignItems: 'center', marginBottom: 50 }}>
                 <Button title="Ingresar" onPress={handleLogin} size='big' />
                 <TouchableOpacity>
                     <Text style={styles.textForgot}>Olvidé mi contraseña</Text>
                 </TouchableOpacity>
             </View>
-            {/* --- Este es el enlace que debe aparecer --- */}
-                        <TouchableOpacity onPress={() => router.push('/bartenderLogin')}>
-                            <Text style={styles.link}>¿Eres Bartender? Ingresa aquí</Text>
-                        </TouchableOpacity>
+            <Button  title="¿Eres Bartender? Ingresa aquí" size='big' variant='secondary' onPress={() => router.push('/bartenderLogin')}/>
         </View>
     );
 }

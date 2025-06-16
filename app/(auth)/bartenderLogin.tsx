@@ -4,6 +4,7 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 // Importamos los nuevos tipos y funciones renombradas
 import { saveBartenderSession, BartenderSession } from '@/utils/session'; 
 import API_URL from '@/constants/Api'; 
+import { Colors } from '@/constants/Colors';
         
         
 export default function BartenderLoginScreen() {
@@ -16,8 +17,6 @@ export default function BartenderLoginScreen() {
         if (loading) return;
         setLoading(true);
         setError('');  
-
-        
 
         try {
             const response = await fetch(`${API_URL}/auth/bartender/login/`, {
@@ -81,13 +80,12 @@ export default function BartenderLoginScreen() {
     );
 }
 
-// ... (los estilos se mantienen igual)
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
         padding: 20,
-        backgroundColor: '#121212',
+        backgroundColor: Colors.dark.background,
     },
     title: {
         fontSize: 28,
@@ -99,7 +97,6 @@ const styles = StyleSheet.create({
     input: {
         height: 50,
         backgroundColor: '#2C2C2C',
-        borderRadius: 8,
         marginBottom: 15,
         paddingHorizontal: 15,
         fontSize: 16,
@@ -108,15 +105,14 @@ const styles = StyleSheet.create({
         borderColor: '#444',
     },
     button: {
-        backgroundColor: '#007AFF',
+        backgroundColor: Colors.dark.primary,
         height: 50,
-        borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 10,
     },
     buttonText: {
-        color: '#fff',
+        color: Colors.dark.background,
         fontSize: 16,
         fontWeight: 'bold',
     },
