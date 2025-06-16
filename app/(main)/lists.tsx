@@ -7,23 +7,91 @@ import { Input } from '@/components/Input';
 import { Dropdown } from '@/components/Dropdown';
 import { Pin } from '@/components/Pin';
 import { Drink } from '@/types/drinks';
-import { createList, fetchAlcoholes, saveAlcoholListRelation, fetchListsByAdmin, fetchAlcoholListRelationsByListId} from '@/utils/listsService';
+import { createList, fetchAlcoholes, saveAlcoholListRelation, fetchListsByAdmin, fetchAlcoholListRelationsByListId } from '@/utils/listsService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 export default function Lists() {
     const { width, height } = useWindowDimensions();
     const [showModal, setShowModal] = useState(false);
-    const [editedListItems, setEditedListItems] = useState<Drink[]>([]);
-    const [unsavedChanges, setUnsavedChanges] = useState(false);
 
     const [drinkslist, setDrinksList] = useState<Drink[]>([]);
 
     const [categories, setCategories] = useState<string[]>([]);
     const [idadmin, setidadmin] = useState<number | null>(null);
 
+    const [lists, setLists] = useState<{ id: number; title: string; items: Drink[] }[]>([]);
+    const [selectedListId, setSelectedListId] = useState<number | null>(null);
+    const [selectedList, setSelectedList] = useState([]);
+    const [newListName, setNewListName] = useState('');
+    const [listDrinkRelation, setListDrinkRelation] = useState([]);
+    const fetchLists = async () => {
+        if (idadmin !== null) {
+            try {
+                const listsData = await fetchListsByAdmin(idadmin);
+                const listsWithItems = await Promise.all(
+                    listsData.map(async (list: any) => {
+                        const relations = await fetchAlcoholListRelationsByListId(list.id);
+                        const items = relations.map((rel: any) => ({ id: rel.idalcohol }));
+                        return {
+                            id: list.id,
+                            title: list.nombre,
+                            items: items,
+                        };
+                    })
+                );
+
+                setLists(listsWithItems);
+            } catch (error) {
+                console.error("Failed to fetch lists by admin:", error);
+            }
+        }
+    };
+    const fetchListDrinkRelation = async () => {
+        if (selectedListId != null) {
+            const listDrinks = await fetchAlcoholListRelationsByListId(selectedListId);
+
+            const newList = listDrinks.filter((relation) => (relation.idlista === selectedListId));
+            setListDrinkRelation(listDrinks);
+
+            const alcoholIds = newList.map((item: any) => item.idalcohol);
+            setSelectedList(alcoholIds);
+        }
+        else {
+            setSelectedList([]);
+        }
+    }
+
+    const updateSelectedList = (newSelected) => {
+        setSelectedList(newSelected);
+    }
+
+    const handleSaveList = async () => {
+        if (newListName === '') {
+            console.log('Ingresa nombre de la nueva lista');
+            return;
+        }
+        const idList = await createList({ nombre: newListName, idadministrador: idadmin });
+        for (const s of selectedList) {
+            console.log(s);
+            const relation = { idlista: idList.id, idalcohol: s }
+            console.log(relation);
+            await saveAlcoholListRelation(relation);
+        }
+        // setSelectedListId(idList.id);
+        setShowModal(false);
+        fetchLists();
+        fetchListDrinkRelation();
+        setSelectedListId(idList.id);
+    };
+
+    const handleDeleteList = () => {
+        if (selectedListId == null) return;
+        setLists(prev => prev.filter(l => l.id !== selectedListId));
+        setSelectedListId(null);
+    };
     useEffect(() => {
-        const getid = async () =>{
+        const getid = async () => {
             const idString = await AsyncStorage.getItem('id');
             const idadmin = idString ? parseInt(idString, 10) : null;
             setidadmin(idadmin);
@@ -39,108 +107,27 @@ export default function Lists() {
                 console.error("Failed to load drinks:", error);
             }
         };
-        const loadLists = async () => {
-            try {
-
-            }
-            catch (error) {
-                console.error("Failed to load lists:", error);
-            }
-        }
         loadDrinks();
     }, []);
-
-
-    const [lists, setLists] = useState<{ id: number; title: string; items: Drink[] }[]>([]);
-    const [selectedListId, setSelectedListId] = useState<number | null>(null);
-    const [selected, setSelected] = useState<Drink[]>([]);
-    const [newListName, setNewListName] = useState('');
-
     useEffect(() => {
-        const fetchLists = async () => {
-            if (idadmin !== null) {
-                try {
-                    console.log("Fetching lists for admin id:", idadmin);
-                    const listsData = await fetchListsByAdmin(idadmin);
-                    console.log("Fetched lists data:", listsData);
-
-                    // For each list, fetch its alcohol relations and add items property
-                    const listsWithItems = await Promise.all(
-                        listsData.map(async (list: any) => {
-                            const relations = await fetchAlcoholListRelationsByListId(list.id);
-                            // Assuming relations contain idalcohol, map to Drink objects or ids
-                            // For now, just store the idalcohols as items
-                            const items = relations.map((rel: any) => ({ id: rel.idalcohol }));
-                            return {
-                                id: list.id,
-                                title: list.nombre, // map nombre to title for Dropdown
-                                items: items,
-                            };
-                        })
-                    );
-
-                    setLists(listsWithItems);
-                } catch (error) {
-                    console.error("Failed to fetch lists by admin:", error);
-                }
-            }
-        };
         fetchLists();
+        fetchListDrinkRelation();
     }, [idadmin]);
+    useEffect(() => {
+        console.log('Actualiza listDrinkRelation', listDrinkRelation);
+    }, [listDrinkRelation]);
+    useEffect(() => {
+        fetchListDrinkRelation();
+    }, [selectedListId])
 
-    const selectedList = selectedListId != null
-        ? lists.find(list => list.id === selectedListId) ?? null
-        : null;
 
-    const selectedTragos = selectedList ? selectedList.items : selected;
-
-    const handleSaveList = async () => {
-        if (newListName === '') {
-            console.log('Ingresa nombre de la nueva lista');
-            return;
-        };
-        const idList = await createList({ nombre: newListName , idadministrador: idadmin});
-        selected.forEach((s) => {
-            console.log("idLista:", idList.id);
-            console.log('idTrago:', s.id)
-            saveAlcoholListRelation({ idlista: idList.id, idalcohol: s.id })
-        })
-        console.log(selected);
-        // const newList = {
-        // title: newListName.trim(),
-        // items: selected,
-        // id: lists.length,
-        // };
-        // setLists(prev => [...prev, newList]);
-        setShowModal(false);
-        // setSelectedListId(newList.id)
-        console.log('Save list', newListName);
-    }
-    const updateSelectedTragos = (updatedDrinks: Drink[]) => {
-        if (selectedListId != null) {
-            const updatedLists = lists.map(list =>
-                list.id === selectedListId ? { ...list, items: updatedDrinks } : list
-            );
-            setLists(updatedLists);
-        } else {
-            setSelected(updatedDrinks);
-        }
-    };
-
-    const handleDeleteList = () => {
-        if (selectedListId == null) return;
-        setLists(prev => prev.filter(l => l.id !== selectedListId));
-        setSelectedListId(null);
-        setEditedListItems([]);
-        setUnsavedChanges(false);
-    };
     return (
         <>
             <View style={styles.topBarContainer}>
                 <Dropdown placeholder='Selecciona una lista' lists={lists} selectedId={selectedListId}
                     onSelect={setSelectedListId} />
                 <View style={styles.topBarBottom}>
-                    <Text style={styles.countText}> SELECCIONADOS: {selected.length}</Text>
+                    <Text style={styles.countText}> SELECCIONADOS: {selectedList.length}</Text>
                     <Button title='Seleccionar todos' variant='secondary' size='small' onPress={() => console.log('todos')} />
                     <Button title='Deseleccionar todos' variant='secondary' size='small' onPress={() => console.log('ninguno')} />
                 </View>
@@ -151,8 +138,8 @@ export default function Lists() {
                     <TragosList
                         key={c}
                         title={c}
-                        selectedList={selectedTragos}
-                        setSelected={updateSelectedTragos}
+                        selectedList={selectedList}
+                        setSelected={updateSelectedList}
                         list={drinkslist.filter((item: any) => item.categoria === c)}
                     />
                 ))}
@@ -176,7 +163,7 @@ export default function Lists() {
                         <Input placeholder='Ingresa nombre de lista' value={newListName} onChange={setNewListName} />
                         <View style={styles.modalButtonContainer}>
                             <Button title='Aceptar' onPress={handleSaveList} />
-                            <Button title='Cancelar' variant='secondary' onPress={() => setShowModal(false)} />
+                            <Button title='Cancelar' variant='secondary' onPress={() => { setShowModal(false); setNewListName('') }} />
                         </View>
                     </View>
                 </View>

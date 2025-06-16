@@ -4,7 +4,8 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 // Importamos los nuevos tipos y funciones renombradas
 import { saveBartenderSession, BartenderSession } from '@/utils/session'; 
 import API_URL from '@/constants/Api'; 
-
+        
+        
 export default function BartenderLoginScreen() {
     const [nombre, setNombre] = useState('');
     const [pin, setPin] = useState('');
