@@ -18,7 +18,7 @@ export default function BartenderLoginScreen() {
         setError('');
 
         try {
-            const response = await fetch(`${API_URL}/api/auth/bartender/login/`, {
+            const response = await fetch(`${API_URL}/auth/bartender/login/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nombre, pin }),
