@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 // Importamos los nuevos tipos y funciones renombradas
 import { saveBartenderSession, BartenderSession } from '@/utils/session'; 
-
-const API_URL = 'http://localhost:8000'; 
+import API_URL from '@/constants/Api'; 
 
 export default function BartenderLoginScreen() {
     const [nombre, setNombre] = useState('');
@@ -15,10 +14,12 @@ export default function BartenderLoginScreen() {
     const handleBartenderLogin = async () => {
         if (loading) return;
         setLoading(true);
-        setError('');
+        setError('');  
+
+        
 
         try {
-            const response = await fetch(`${API_URL}/api/auth/bartender/login/`, {
+            const response = await fetch(`${API_URL}/auth/bartender/login/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nombre, pin }),
