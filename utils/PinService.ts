@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000/api'; // Adjust base URL as needed
+import API_URL from "@/constants/Api";
 
 export interface AdminPinData {
     pin: number | null;
@@ -7,7 +7,7 @@ export interface AdminPinData {
 
 export async function getAdminPin(adminId: number): Promise<AdminPinData | null> {
     try {
-        const response = await fetch(`${API_BASE_URL}/administrador/${adminId}/`);
+        const response = await fetch(`${API_URL}/administrador/${adminId}/`);
         if (!response.ok) {
             console.error('Failed to fetch admin pin data:', response.statusText);
             return null;
@@ -27,7 +27,7 @@ export async function getAdminPin(adminId: number): Promise<AdminPinData | null>
 
 export async function regeneratePin(adminId: number, forzar: boolean): Promise<boolean> {
     try {
-        const response = await fetch(`${API_BASE_URL}/administrador/${adminId}/regenerar_pin/`, {
+        const response = await fetch(`${API_URL}/administrador/${adminId}/regenerar_pin/`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',

@@ -10,7 +10,7 @@ interface BartenderData {
 // Obtener todos los bartenders
 export const fetchBartenders = async (): Promise<BartenderData[]> => {
   try {
-    const response = await fetch(`${API_URL}/BartenderCreate/`);
+    const response = await fetch(`${API_URL}/Bartender/`);
     if (!response.ok) throw new Error('Error al obtener bartenders');
     return await response.json();
   } catch (error) {
@@ -32,15 +32,14 @@ export const fetchBartendersPorAdminConBarra = async (adminId: number): Promise<
 };
 
 // Crear nuevo bartender
-interface NewBartenderData {
+export interface NewBartenderData {
   nombre: string;
   idadministrador: number;
-  idbarra: number;
 }
 
 export const createBartender = async (bartenderData: NewBartenderData) => {
   try {
-    const response = await fetch(`${API_URL}/BartenderCreate/`, {
+    const response = await fetch(`${API_URL}/Bartender/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bartenderData),
@@ -54,34 +53,42 @@ export const createBartender = async (bartenderData: NewBartenderData) => {
   }
 };
 
-// Actualizar bartender existente
-export const updateBartender = async (id: number, bartenderData: Partial<NewBartenderData>) => {
+// Actualizar bartender (PUT)
+export const updateBartender = async (id: number, updatedData: { nombre: string }) => {
   try {
-    const response = await fetch(`${API_URL}/BartenderRetrieveUpdateDestroy/${id}`, {
+    const response = await fetch(`${API_URL}/Bartender/${id}/`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bartenderData),
+      body: JSON.stringify(updatedData),
     });
 
-    if (!response.ok) throw new Error('Error al actualizar bartender');
+    if (!response.ok) {
+      if (response.status === 400) {
+        const data = await response.json();
+        if (data.nombre && data.nombre.includes('unique')) {
+          throw new Error('Ya existe un bartender con ese nombre.');
+        }
+      }
+      throw new Error('Error al actualizar bartender');
+    }
+
     return await response.json();
   } catch (error) {
-    console.error("Error actualizando bartender:", error);
+    console.error('Error actualizando bartender:', error);
     throw error;
   }
 };
 
-// Eliminar bartender por id
+// Eliminar bartender (DELETE)
 export const deleteBartender = async (id: number) => {
   try {
-    const response = await fetch(`${API_URL}/BartenderRetrieveUpdateDestroy/${id}`, {
+    const response = await fetch(`${API_URL}/Bartender/${id}/`, {
       method: 'DELETE',
     });
 
     if (!response.ok) throw new Error('Error al eliminar bartender');
-    return true;
   } catch (error) {
-    console.error("Error eliminando bartender:", error);
+    console.error('Error eliminando bartender:', error);
     throw error;
   }
 };

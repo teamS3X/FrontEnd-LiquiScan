@@ -1,52 +1,92 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { StaffItem } from '@/components/StaffItem';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/Button';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Para obtener id admin
-import { fetchBartendersPorAdminConBarra } from '@/utils/BartenderService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchBartendersPorAdminConBarra, createBartender, updateBartender, deleteBartender } from '@/utils/BartenderService';
 
 export default function Staff() {
     const [staff, setStaff] = useState<{ id: number; name: string }[]>([]);
+    const [adminId, setAdminId] = useState<number | null>(null);
+
+    const loadBartenders = async (adminIdToUse: number) => {
+        try {
+            const bartendersData = await fetchBartendersPorAdminConBarra(adminIdToUse);
+            const formatted = bartendersData.map((b: any) => ({
+                id: b.id,
+                name: b.nombre,
+            }));
+            setStaff(formatted);
+        } catch (error) {
+            console.error("Error cargando bartenders:", error);
+        }
+    };
 
     useEffect(() => {
-        const loadBartenders = async () => {
-            try {
-                const idString = await AsyncStorage.getItem('id');
-                const adminId = idString ? parseInt(idString, 10) : null;
-                if (adminId === null) throw new Error("ID de administrador no encontrado");
-
-                const bartendersData = await fetchBartendersPorAdminConBarra(adminId);
-
-                // Suponiendo que bartendersData viene con { id, nombre } 
-                // Adaptamos al formato {id, name}
-                const formatted = bartendersData.map((b: any) => ({
-                    id: b.id,
-                    name: b.nombre,
-                }));
-
-                setStaff(formatted);
-            } catch (error) {
-                console.error("Error cargando bartenders:", error);
+        const fetchAdminId = async () => {
+            const idString = await AsyncStorage.getItem('id');
+            const parsedId = idString ? parseInt(idString, 10) : null;
+            if (parsedId !== null) {
+                setAdminId(parsedId);
+                loadBartenders(parsedId);
             }
         };
-
-        loadBartenders();
+        fetchAdminId();
     }, []);
 
-    const renamePerson = (id: number, newName: string) => {
-        setStaff(prev =>
-            prev.map(person => (person.id === id ? { ...person, name: newName } : person))
+    const handleCreateStaff = async () => {
+        if (!adminId) return Alert.alert("Error", "ID de administrador no encontrado");
+
+        const newName = prompt("Ingrese nombre del nuevo bartender:");
+
+        if (!newName || newName.trim() === '') {
+            return Alert.alert("Error", "Debe ingresar un nombre válido.");
+        }
+
+        try {
+            const newBartender = {
+                nombre: newName.trim(),
+                idadministrador: adminId,
+            };
+
+            await createBartender(newBartender);
+            await loadBartenders(adminId);
+            Alert.alert("Éxito", `Bartender "${newName}" creado correctamente.`);
+        } catch (error: any) {
+            Alert.alert("Error", error.message || "No se pudo crear el bartender.");
+        }
+    };
+
+    const renamePerson = async (id: number, newName: string) => {
+        try {
+            await updateBartender(id, { nombre: newName.trim() });
+            await loadBartenders(adminId!);
+            Alert.alert("Éxito", "Nombre actualizado.");
+        } catch (error: any) {
+            Alert.alert("Error", error.message || "No se pudo actualizar el bartender.");
+        }
+    };
+
+    const deletePerson = async (id: number) => {
+        Alert.alert(
+            "Confirmar eliminación",
+            "¿Estás seguro de que quieres eliminar este bartender?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Eliminar", style: "destructive", onPress: async () => {
+                        try {
+                            await deleteBartender(id);
+                            await loadBartenders(adminId!);
+                            Alert.alert("Éxito", "Bartender eliminado.");
+                        } catch (error: any) {
+                            Alert.alert("Error", error.message || "No se pudo eliminar el bartender.");
+                        }
+                    }
+                }
+            ]
         );
-    };
-
-    const deletePerson = (id: number) => {
-        setStaff(prev => prev.filter(person => person.id !== id));
-    };
-
-    const handleCreateStaff = () => {
-        // Aquí puedes poner la lógica para crear un bartender
-        // Por ejemplo abrir un modal, o navegar a otro componente
     };
 
     return (
@@ -69,6 +109,7 @@ export default function Staff() {
         </View>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {
