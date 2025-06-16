@@ -69,24 +69,13 @@ export default function Staff() {
     };
 
     const deletePerson = async (id: number) => {
-        Alert.alert(
-            "Confirmar eliminación",
-            "¿Estás seguro de que quieres eliminar este bartender?",
-            [
-                { text: "Cancelar", style: "cancel" },
-                {
-                    text: "Eliminar", style: "destructive", onPress: async () => {
-                        try {
-                            await deleteBartender(id);
-                            await loadBartenders(adminId!);
-                            Alert.alert("Éxito", "Bartender eliminado.");
-                        } catch (error: any) {
-                            Alert.alert("Error", error.message || "No se pudo eliminar el bartender.");
-                        }
-                    }
-                }
-            ]
-        );
+        try {
+            await deleteBartender(id);
+            await loadBartenders(adminId!);
+            Alert.alert("Éxito", "Bartender eliminado.");
+        } catch (error: any) {
+            Alert.alert("Error", error.message || "No se pudo eliminar el bartender.");
+        }
     };
 
     return (
