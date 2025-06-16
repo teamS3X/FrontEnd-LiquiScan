@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 // Importamos los nuevos tipos y funciones renombradas
 import { saveBartenderSession, BartenderSession } from '@/utils/session'; 
+import API_URL from '@/constants/Api';
 
-const API_URL = 'http://localhost:8000'; 
 
 export default function BartenderLoginScreen() {
     const [nombre, setNombre] = useState('');

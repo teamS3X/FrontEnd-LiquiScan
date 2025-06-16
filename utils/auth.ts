@@ -1,6 +1,6 @@
+import API_URL from '@/constants/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://localhost:8000/api';
 
 interface LoginCredentials {
     correoelectronico: string;

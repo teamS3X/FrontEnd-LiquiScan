@@ -1,6 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import API_URL from "@/constants/Api";
 
-const API_URL = 'http://localhost:8000/api';
 
 interface Barra {
     id?: number;        // opcional cuando estás creando

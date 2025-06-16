@@ -7,7 +7,7 @@ import { Input } from '@/components/Input';
 import { Dropdown } from '@/components/Dropdown';
 import { Pin } from '@/components/Pin';
 import { Drink } from '@/types/drinks';
-import { createList, fetchAlcoholes, saveAlcoholListRelation, fetchListsByAdmin, fetchAlcoholListRelationsByListId} from '@/utils/listsService';
+import { createList, fetchAlcoholes, saveAlcoholListRelation, fetchListsByAdmin, fetchAlcoholListRelationsByListId } from '@/utils/listsService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
@@ -22,8 +22,75 @@ export default function Lists() {
     const [categories, setCategories] = useState<string[]>([]);
     const [idadmin, setidadmin] = useState<number | null>(null);
 
+    const [lists, setLists] = useState<{ id: number; title: string; items: Drink[] }[]>([]);
+    const [selectedListId, setSelectedListId] = useState<number | null>(null);
+    const [selected, setSelected] = useState<Drink[]>([]);
+    const [newListName, setNewListName] = useState('');
+
+
+    const fetchLists = async () => {
+        if (idadmin !== null) {
+            try {
+                console.log("Fetching lists for admin id:", idadmin);
+                const listsData = await fetchListsByAdmin(idadmin);
+                console.log("Fetched lists data:", listsData);
+
+                // For each list, fetch its alcohol relations and add items property
+                const listsWithItems = await Promise.all(
+                    listsData.map(async (list: any) => {
+                        const relations = await fetchAlcoholListRelationsByListId(list.id);
+                        // Assuming relations contain idalcohol, map to Drink objects or ids
+                        // For now, just store the idalcohols as items
+                        const items = relations.map((rel: any) => ({ id: rel.idalcohol }));
+                        return {
+                            id: list.id,
+                            title: list.nombre, // map nombre to title for Dropdown
+                            items: items,
+                        };
+                    })
+                );
+
+                setLists(listsWithItems);
+            } catch (error) {
+                console.error("Failed to fetch lists by admin:", error);
+            }
+        }
+    };
+    const updateSelectedTragos = (updatedDrinks: Drink[]) => {
+        if (selectedListId != null) {
+            const updatedLists = lists.map(list =>
+                list.id === selectedListId ? { ...list, items: updatedDrinks } : list
+            );
+            setLists(updatedLists);
+        } else {
+            setSelected(updatedDrinks);
+        }
+    };
+    const handleSaveList = async () => {
+        if (newListName === '') {
+            console.log('Ingresa nombre de la nueva lista');
+            return;
+        };
+        const idList = await createList({ nombre: newListName, idadministrador: idadmin });
+        selected.forEach((s) => {
+            console.log("idLista:", idList.id);
+            console.log('idTrago:', s.id)
+            saveAlcoholListRelation({ idlista: idList.id, idalcohol: s.id })
+        })
+        setShowModal(false);
+        fetchLists();
+        // setSelectedListId(newList.id)
+        console.log('Save list', newListName);
+    }
+    const handleDeleteList = () => {
+        if (selectedListId == null) return;
+        setLists(prev => prev.filter(l => l.id !== selectedListId));
+        setSelectedListId(null);
+        setEditedListItems([]);
+        setUnsavedChanges(false);
+    };
     useEffect(() => {
-        const getid = async () =>{
+        const getid = async () => {
             const idString = await AsyncStorage.getItem('id');
             const idadmin = idString ? parseInt(idString, 10) : null;
             setidadmin(idadmin);
@@ -50,43 +117,11 @@ export default function Lists() {
         loadDrinks();
     }, []);
 
-
-    const [lists, setLists] = useState<{ id: number; title: string; items: Drink[] }[]>([]);
-    const [selectedListId, setSelectedListId] = useState<number | null>(null);
-    const [selected, setSelected] = useState<Drink[]>([]);
-    const [newListName, setNewListName] = useState('');
-
     useEffect(() => {
-        const fetchLists = async () => {
-            if (idadmin !== null) {
-                try {
-                    console.log("Fetching lists for admin id:", idadmin);
-                    const listsData = await fetchListsByAdmin(idadmin);
-                    console.log("Fetched lists data:", listsData);
-
-                    // For each list, fetch its alcohol relations and add items property
-                    const listsWithItems = await Promise.all(
-                        listsData.map(async (list: any) => {
-                            const relations = await fetchAlcoholListRelationsByListId(list.id);
-                            // Assuming relations contain idalcohol, map to Drink objects or ids
-                            // For now, just store the idalcohols as items
-                            const items = relations.map((rel: any) => ({ id: rel.idalcohol }));
-                            return {
-                                id: list.id,
-                                title: list.nombre, // map nombre to title for Dropdown
-                                items: items,
-                            };
-                        })
-                    );
-
-                    setLists(listsWithItems);
-                } catch (error) {
-                    console.error("Failed to fetch lists by admin:", error);
-                }
-            }
-        };
         fetchLists();
     }, [idadmin]);
+
+
 
     const selectedList = selectedListId != null
         ? lists.find(list => list.id === selectedListId) ?? null
@@ -94,46 +129,7 @@ export default function Lists() {
 
     const selectedTragos = selectedList ? selectedList.items : selected;
 
-    const handleSaveList = async () => {
-        if (newListName === '') {
-            console.log('Ingresa nombre de la nueva lista');
-            return;
-        };
-        const idList = await createList({ nombre: newListName , idadministrador: idadmin});
-        selected.forEach((s) => {
-            console.log("idLista:", idList.id);
-            console.log('idTrago:', s.id)
-            saveAlcoholListRelation({ idlista: idList.id, idalcohol: s.id })
-        })
-        console.log(selected);
-        // const newList = {
-        // title: newListName.trim(),
-        // items: selected,
-        // id: lists.length,
-        // };
-        // setLists(prev => [...prev, newList]);
-        setShowModal(false);
-        // setSelectedListId(newList.id)
-        console.log('Save list', newListName);
-    }
-    const updateSelectedTragos = (updatedDrinks: Drink[]) => {
-        if (selectedListId != null) {
-            const updatedLists = lists.map(list =>
-                list.id === selectedListId ? { ...list, items: updatedDrinks } : list
-            );
-            setLists(updatedLists);
-        } else {
-            setSelected(updatedDrinks);
-        }
-    };
 
-    const handleDeleteList = () => {
-        if (selectedListId == null) return;
-        setLists(prev => prev.filter(l => l.id !== selectedListId));
-        setSelectedListId(null);
-        setEditedListItems([]);
-        setUnsavedChanges(false);
-    };
     return (
         <>
             <View style={styles.topBarContainer}>
