@@ -5,22 +5,23 @@ import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-nati
 
 interface ListProps {
     title: string;
-    selectedList: Drink[];
+    selectedList: number[];
     setSelected: any,
     list: any,
 }
 
 export const TragosList = ({ title, selectedList, setSelected, list }: ListProps) => {
     const addItemToSelected = (item: Drink) => {
-        const exists = selectedList.some(drink => drink.id === item.id);
+        const exists = selectedList.includes(item.id);
         if (!exists) {
-            const newSelected = [...selectedList, item];
+            const newSelected = [...selectedList, item.id];
             setSelected(newSelected);
         } else {
-            const newSelected = selectedList.filter(drink => drink.id !== item.id);
+            const newSelected = selectedList.filter(id => id !== item.id);
             setSelected(newSelected);
         }
     };
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>{title}</Text>
@@ -33,7 +34,7 @@ export const TragosList = ({ title, selectedList, setSelected, list }: ListProps
                         >
                             <TragosListItem
                                 title={item.nombre}
-                                selected={selectedList.some(drink => drink.id === item.id)}
+                                selected={selectedList.some(drink => drink === item.id)}
                                 path={item.imagen}
                             />
                         </TouchableOpacity>

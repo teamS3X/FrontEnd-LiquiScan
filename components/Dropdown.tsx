@@ -34,7 +34,6 @@ export const Dropdown = ({
     onSelect,
 }: DropdownProps) => {
     const [isOpen, setIsOpen] = useState(false);
-
     const selectedList = lists.find((list) => list.id === selectedId);
 
     const handleSelect = (id: number | null) => {
@@ -107,7 +106,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: Colors.dark.text,
         width: 250,
-        maxHeight: 300,
         borderRadius: 5,
     },
     item: {
