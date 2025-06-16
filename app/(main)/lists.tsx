@@ -51,7 +51,7 @@ export default function Lists() {
         if (selectedListId != null) {
             const listDrinks = await fetchAlcoholListRelationsByListId(selectedListId);
 
-            const newList = listDrinks.filter((relation) => (relation.idlista === selectedListId));
+            const newList = listDrinks.filter((relation:any) => (relation.idlista === selectedListId));
             setListDrinkRelation(listDrinks);
 
             const alcoholIds = newList.map((item: any) => item.idalcohol);
@@ -62,7 +62,7 @@ export default function Lists() {
         }
     }
 
-    const updateSelectedList = (newSelected) => {
+    const updateSelectedList = (newSelected:any) => {
         setSelectedList(newSelected);
     }
 

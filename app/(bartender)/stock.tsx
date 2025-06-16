@@ -19,7 +19,7 @@ export default function stock() {
             ],
         },
         {
-            id: 2,
+            id: 12,
             title: 'Lista Premium',
             items: [
                 { id: 3, title: 'Old Fashioned', image: 'https://example.com/old-fashioned.png' },
@@ -81,7 +81,6 @@ export default function stock() {
     ];
     // Objeto que almacena el stock ingresado
     const [stock, setStock] = useState<{ id: number, title: string, image: string, manualStock: number, aiStock: number }[]>();
-
     const [openCamera, setOpenCamera] = useState(false);
     const [scanDrinkId, setScanDrinkId] = useState<number | null>(null);
     const [hasPermission, setHasPermission] = useState(true);
