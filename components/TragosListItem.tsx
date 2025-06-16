@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
         borderStyle: 'solid',
         borderColor: Colors.dark.text,
         width: 150,
-        height: 180,
+        height: 190,
         backgroundColor: Colors.dark.background,
         display: 'flex',
         alignItems: 'center',
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: 500,
         marginTop: 8,
-        paddingInline: 15,
+        paddingInline: 10,
         color: Colors.dark.text,
     },
     checkBox: {
