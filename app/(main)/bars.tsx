@@ -1,13 +1,11 @@
-import { View, Text, StyleSheet, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Modal, ScrollView } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { BarItem } from '@/components/BarItem';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createBarra,createBarraValidando } from '@/utils/barService';
+import {createBarraValidando } from '@/utils/barService';
 import API_URL from '@/constants/Api';
-
-
 
 
 interface Lista {
@@ -110,7 +108,7 @@ const handleSaveBar = async () => {
             <Text style={styles.title}>
                 Barras
             </Text>
-            <View style={styles.barsContainer}>
+            <ScrollView style={styles.barsContainer}>
                 {barras.map((item, index) => (
                     <BarItem
                         key={item.id}
@@ -123,14 +121,14 @@ const handleSaveBar = async () => {
                         lists={lists}
                     />
                 ))}
-            </View>
+            </ScrollView>
             <View style={styles.buttonContainer}>
                 <Button title='Crear Barra' size='big' onPress={handleCreateBar} />
             </View>
             <Modal
                 visible={showModal}
                 transparent={true}
-                animationType="slide"
+                animationType="fade"
                 onRequestClose={() => setShowModal(false)}
             >
                 <View style={styles.modalOverlay}>
@@ -176,7 +174,6 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         height: 80,
-        backgroundColor: Colors.dark.background,
         display: 'flex',
         flexDirection: 'row',
         justifyContent: 'center',

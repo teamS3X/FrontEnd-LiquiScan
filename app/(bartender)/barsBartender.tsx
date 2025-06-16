@@ -13,17 +13,17 @@ export default function BarsBartender() {
         const loadBarsData = async () => {
             // 2. CORRECCIÓN EN LA ANOTACIÓN DE TIPO: Se usa 'BartenderSession'.
             const session: BartenderSession | null = await getBartenderSession();
-            
+
             if (session?.bars) {
                 setBarras(session.bars);
             }
         };
         loadBarsData();
     }, []);
-    
+
     const handleLogout = async () => {
         await clearBartenderSession();
-        router.replace('/'); 
+        router.replace('/');
     };
 
     const handleItemPress = (barra: Bar) => {
@@ -31,9 +31,9 @@ export default function BarsBartender() {
             console.log('Error: Esta barra no tiene una lista asignada.');
             return;
         }
-        router.push({ 
-            pathname: '/stock', 
-            params: { listId: barra.idlista, barId: barra.id, barTitle: barra.nombrebarra } 
+        router.push({
+            pathname: '/stock',
+            params: { listId: barra.idlista, barId: barra.id, barTitle: barra.nombrebarra }
         });
     };
 
@@ -44,9 +44,9 @@ export default function BarsBartender() {
             <ScrollView style={styles.barsContainer}>
                 {barras.length > 0 ? (
                     barras.map((barra) => (
-                        <TouchableOpacity 
-                            style={styles.itemContainer} 
-                            key={barra.id} 
+                        <TouchableOpacity
+                            style={styles.itemContainer}
+                            key={barra.id}
                             onPress={() => handleItemPress(barra)}
                         >
                             <Text style={styles.text}>{barra.nombrebarra}</Text>
@@ -73,21 +73,22 @@ const styles = StyleSheet.create({
     },
     title: {
         color: Colors.dark.text,
+        textAlign: 'center',
         height: 80,
         lineHeight: 80,
-        paddingInline: 60,
         textTransform: 'uppercase',
         borderBottomWidth: 1,
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: '700',
         borderColor: Colors.dark.text,
     },
     barsContainer: {
-        marginInline: 20,
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
         paddingBlockEnd: 40,
+        minWidth: 350,
+        marginInline: 'auto',
     },
     itemContainer: {
         borderColor: Colors.dark.text,
