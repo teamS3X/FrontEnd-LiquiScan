@@ -1,172 +1,209 @@
+import { View, Text, StyleSheet, ScrollView, Image, TextInput, TouchableOpacity } from 'react-native';
+import { Button } from '@/components/Button';
 import { Colors } from '@/constants/Colors';
-import { CameraView } from 'expo-camera';
-import React, { useRef } from 'react';
-import { Alert, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Camera } from 'expo-camera';
+import { ScanDrink, EstimationResult } from '@/components/ScanDrink'; // Importamos el tipo EstimationResult
 
-type stockItemType = {
-    id: number, title: string, image: string, manualStock: number, aiStock: number
-}
+export default function StockScreen() {
+    // Definimos el tipo para un item del stock
+    type StockItem = {
+        id: number;
+        title: string;
+        image: string;
+        manualStock: number; // Botellas llenas
+        aiStock: number;     // Onzas estimadas de la botella parcial
+    };
+    
+    const [stock, setStock] = useState<StockItem[]>([]);
+    const [openCamera, setOpenCamera] = useState(false);
+    const [scanDrinkId, setScanDrinkId] = useState<number | null>(null);
+    const [hasPermission, setHasPermission] = useState(true);
+    
+    // Estados para el nuevo modal de confirmación de IA
+    const [estimationResult, setEstimationResult] = useState<EstimationResult | null>(null);
+    const [isEstimationModalVisible, setEstimationModalVisible] = useState(false);
 
-interface ScanProps {
-    drinkId: number | null;
-    closeCamera: () => void;
-    stock: { id: number, title: string, image: string, manualStock: number, aiStock: number }[];
-    setStock: (newStock: { id: number, title: string, image: string, manualStock: number, aiStock: number }[]) => void;
-}
+    const params = useLocalSearchParams();
 
-// URL de tu servidor backend Django.
-// Si estás probando en un emulador Android, '10.0.2.2' es el alias para tu localhost.
-// En un dispositivo físico, usa la IP de tu máquina local (ej: 'http://192.168.1.5:8000/api/estimate_liquid/').
-const BACKEND_URL = 'http://10.0.2.2:8000/api/estimate_liquid/'; // Para emulador Android
-// const BACKEND_URL = 'http://localhost:8000/api/estimate_liquid/'; // Para iOS simulator o Expo Go en web
-// const BACKEND_URL = 'http://TU_IP_LOCAL:8000/api/estimate_liquid/'; // Para dispositivo físico
+    useEffect(() => {
+        // Lógica para cargar la lista de bebidas (puede venir de una API en el futuro)
+        const mockItems = [
+            { id: 1, title: 'Pisco Sour', image: '@/assets/images/trago.jpg' },
+            { id: 2, title: 'Mojito', image: '@/assets/images/trago.jpg' },
+            { id: 3, title: 'Old Fashioned', image: '@/assets/images/trago.jpg' },
+        ];
+        
+        const initialStock = mockItems.map(item => ({
+            ...item,
+            manualStock: 0, // Inicia en 0
+            aiStock: 0,       // Inicia en 0
+        }));
+        setStock(initialStock);
 
-export const ScanDrink = ({
-    drinkId,
-    closeCamera,
-    stock,
-    setStock,
-}: ScanProps) => {
-    const camRef = useRef<CameraView>(null);
+        // Pedir permisos de cámara
+        (async () => {
+            const { status } = await Camera.requestCameraPermissionsAsync();
+            setHasPermission(status === 'granted');
+        })();
+    }, []);
 
-    const takePicture = async () => {
-        if (camRef.current) {
-            const photo = await camRef.current.takePictureAsync({
-                quality: 0.7, // Aumentar calidad para mejor análisis de IA
-                base64: true,
-            });
-            console.log('Photo uri:', photo.uri);
-            return photo;
-        }
-        return null;
-    }
-
-    const obtainRemaining = async () => {
-        if (!drinkId) {
-            Alert.alert('Error', 'No se ha seleccionado una bebida.');
+    const handleTakePicture = (id: number) => {
+        if (!hasPermission) {
+            alert('Se necesitan permisos de cámara para usar esta función.');
             return;
         }
+        setScanDrinkId(id);
+        setOpenCamera(true);
+    };
 
-        const photo = await takePicture();
-        if (!photo?.base64) {
-            Alert.alert('Error', 'No se pudo capturar la imagen. Asegúrate de dar permisos a la cámara.');
-            return;
-        }
+    // Función que se ejecuta cuando la IA termina
+    const handleEstimationComplete = (result: EstimationResult) => {
+        setEstimationResult(result);
+        setEstimationModalVisible(true);
+    };
 
-        try {
-            console.log('Enviando imagen al servidor Django...');
-            const response = await fetch(BACKEND_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    image: photo.base64,
-                    drinkId: drinkId,
-                }),
-            });
+    // Función que se ejecuta si el usuario confirma la estimación
+    const confirmAiStockUpdate = () => {
+        if (!estimationResult || scanDrinkId === null) return;
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`Error del servidor: ${response.status} - ${errorData.error || 'Mensaje desconocido'}`);
+        const updatedStock = stock.map((drink) => {
+            if (drink.id === scanDrinkId) {
+                // Actualizamos el stock con el valor en ONZAS
+                return { ...drink, aiStock: estimationResult.volumen_fl_oz };
             }
+            return drink;
+        });
 
-            const data = await response.json();
-            const predictedStock = parseFloat(data.fraccion);
-
-            if (isNaN(predictedStock) || predictedStock < 0.05 || predictedStock > 0.95) {
-                throw new Error('Respuesta de predicción inválida del servidor. La fracción debe estar entre 0.05 y 0.95.');
-            }
-
-            const updatedStock = stock.map((drink) => {
-                if (drink.id === drinkId) {
-                    return {
-                        ...drink,
-                        aiStock: predictedStock // Reemplaza aiStock con la fracción predicha
-                    };
-                }
-                return drink;
-            });
-
-            setStock(updatedStock);
-            Alert.alert('Éxito', `Stock actualizado: ${Math.round(predictedStock * 100)}%`);
-            closeCamera();
-
-        } catch (err: any) {
-            console.error('Error al obtener el stock:', err);
-            Alert.alert('Error', `Problema con el servidor o la respuesta: ${err.message || 'Error desconocido'}`);
-        }
+        setStock(updatedStock);
+        setEstimationModalVisible(false);
+        setEstimationResult(null);
     };
 
     return (
-        <View style={styles.container}>
-            <CameraView
-                style={styles.camera}
-                facing={'back'}
-                ref={camRef}
-            >
-            </CameraView>
-            <TouchableOpacity
-                style={styles.takeButton}
-                onPress={obtainRemaining}
-            >
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.backButton}
-                onPress={closeCamera}
-            >
-                <Image
-                    source={require('@/assets/images/icon-back.png')}
-                    style={styles.backIcon}
+        <>
+            <View style={styles.container}>
+                <Text style={styles.title}>{params.barTitle || 'Inventario'}</Text>
+                <ScrollView style={styles.barsContainer}>
+                    {stock.map((drink, index) => (
+                        <View style={styles.itemContainer} key={drink.id}>
+                            <Image source={require('@/assets/images/trago.jpg')} style={styles.image} />
+                            <View style={styles.rightContainer}>
+                                <Text style={styles.text}>{drink.title}</Text>
+                                <View style={styles.middleContainer}>
+                                    <View style={styles.manualInputContainer}>
+                                        <Text>Botellas Llenas:</Text>
+                                        <TextInput
+                                            style={styles.textManual}
+                                            keyboardType='numeric'
+                                            onChangeText={(text) => {
+                                                const updated = [...stock];
+                                                updated[index].manualStock = parseInt(text) || 0;
+                                                setStock(updated);
+                                            }}
+                                            value={drink.manualStock.toString()}
+                                        />
+                                    </View>
+                                    <View style={styles.scanContainer}>
+                                        <TouchableOpacity onPress={() => handleTakePicture(drink.id)}>
+                                            <Image source={require('@/assets/images/icon-scan.png')} style={styles.icon} />
+                                        </TouchableOpacity>
+                                        <Text style={styles.textAi}>{drink.aiStock.toFixed(1)} oz</Text>
+                                    </View>
+                                </View>
+                            </View>
+                        </View>
+                    ))}
+                </ScrollView>
+                <View style={styles.buttonContainer}>
+                    <Button title='Volver' variant='secondary' onPress={() => router.back()} />
+                    <Button title='Guardar Inventario' onPress={() => console.log(stock)} />
+                </View>
+            </View>
+
+            {/* Componente de la Cámara */}
+            {openCamera && scanDrinkId !== null && (
+                <ScanDrink
+                    drinkId={scanDrinkId}
+                    closeCamera={() => setOpenCamera(false)}
+                    onEstimationComplete={handleEstimationComplete}
                 />
-            </TouchableOpacity>
-        </View >
+            )}
+            
+            {/* Modal de Confirmación de la Estimación */}
+            {isEstimationModalVisible && estimationResult && (
+                <View style={styles.modalBackdrop}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Estimación Recibida</Text>
+                        <Text style={styles.modalText}>Fracción: {Math.round(estimationResult.fraccion * 100)}%</Text>
+                        <Text style={styles.modalText}>Onzas: {estimationResult.volumen_fl_oz.toFixed(1)} oz</Text>
+                        <Text style={styles.modalText}>Mililitros: {Math.round(estimationResult.volumen_ml)} ml</Text>
+                        <Text style={styles.modalQuestion}>¿Desea agregar este valor (en onzas) al inventario?</Text>
+                        <View style={styles.modalButtonContainer}>
+                            <Button title='No' variant='secondary' onPress={() => setEstimationModalVisible(false)} />
+                            <Button title='Sí, Agregar' onPress={confirmAiStockUpdate} />
+                        </View>
+                    </View>
+                </View>
+            )}
+        </>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        height: '100%',
-        width: '100%',
+        ...StyleSheet.absoluteFillObject, // Ocupa toda la pantalla
         backgroundColor: Colors.dark.background,
-        position: 'absolute',
-        top: 0,
-        left: 0,
     },
     camera: {
         flex: 1,
-    },
-    takeButton: {
-        position: 'absolute',
-        backgroundColor: Colors.dark.text,
-        borderRadius: 60,
-        bottom: 100,
-        left: '50%',
-        width: 60,
-        height: 60,
-        transform: [{ translateX: -30 }],
-    },
-    backButton: {
-        position: 'absolute',
-        borderColor: Colors.dark.text,
-        borderWidth: 2,
-        borderRadius: 60,
-        bottom: 100,
-        left: 25,
-        width: 50,
-        height: 50,
-        display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    backIcon: {
-        width: 30,
-        height: 30,
-        marginRight: 3,
+    outline: {
+        width: '50%',
+        height: '70%',
+        resizeMode: 'contain',
+        opacity: 0.3,
     },
-    text: {
-        fontSize: 24,
-        fontWeight: 'bold',
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
         color: 'white',
+        marginTop: 10,
+        fontSize: 16,
     },
+    controlsContainer: {
+        position: 'absolute',
+        bottom: 40,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+    },
+    takeButton: {
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        backgroundColor: 'white',
+        borderWidth: 4,
+        borderColor: 'rgba(0,0,0,0.2)'
+    },
+    controlButton: {
+        padding: 15,
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    placeholder: {
+        width: 80, // Espacio para balancear el botón de cancelar
+    }
 });
