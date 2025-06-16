@@ -6,100 +6,63 @@ import { clearSession } from '@/utils/session';
 import { useEffect, useState } from 'react';
 import { Camera } from 'expo-camera';
 import { ScanDrink } from '@/components/ScanDrink';
-
+import { fetchBarras, fetchListasPorAdministrador } from '@/utils/barService';
+import { fetchAlcoholes, fetchAlcoholListRelationsByListId } from '@/utils/listsService';
+import API_URL from '@/constants/Api';
 export default function stock() {
     const listas = [
         {
-            id: 1,
-            title: 'Lista Clásica',
-            items: [
-                { id: 1, title: 'Pisco Sour', image: 'https://example.com/pisco-sour.png' },
-                { id: 2, title: 'Mojito', image: 'https://example.com/mojito.png' },
-                { id: 11, title: 'Smoked Negroni', image: 'https://example.com/smoked-negroni.png' },
-            ],
-        },
-        {
-            id: 12,
-            title: 'Lista Premium',
-            items: [
-                { id: 3, title: 'Old Fashioned', image: 'https://example.com/old-fashioned.png' },
-                { id: 11, title: 'Smoked Negroni', image: 'https://example.com/smoked-negroni.png' },
-                { id: 1, title: 'Pisco Sour', image: 'https://example.com/pisco-sour.png' },
-                { id: 4, title: 'Martini', image: 'https://example.com/martini.png' },
-                { id: 9, title: 'Limonada Menta Jengibre', image: 'https://example.com/limonada.png' },
-                { id: 10, title: 'Mocktail Tropical', image: 'https://example.com/mocktail.png' },
-                { id: 7, title: 'Tequila Sunrise', image: 'https://example.com/tequila-sunrise.png' },
-                { id: 2, title: 'Mojito', image: 'https://example.com/mojito.png' },
-                { id: 5, title: 'Caipirinha', image: 'https://example.com/caipirinha.png' },
-                { id: 6, title: 'Daiquiri', image: 'https://example.com/daiquiri.png' },
-                { id: 8, title: 'Sex on the Beach', image: 'https://example.com/sex-on-the-beach.png' },
-                { id: 13, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-                { id: 14, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-                { id: 15, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-                { id: 16, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-                { id: 17, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-                { id: 18, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-            ],
-        },
-        {
-            id: 3,
-            title: 'Lista Refrescante',
-            items: [
-                { id: 5, title: 'Caipirinha', image: 'https://example.com/caipirinha.png' },
-                { id: 6, title: 'Daiquiri', image: 'https://example.com/daiquiri.png' },
-                { id: 2, title: 'Mojito', image: 'https://example.com/mojito.png' },
-            ],
-        },
-        {
-            id: 4,
-            title: 'Lista Fiestera',
-            items: [
-                { id: 7, title: 'Tequila Sunrise', image: 'https://example.com/tequila-sunrise.png' },
-                { id: 8, title: 'Sex on the Beach', image: 'https://example.com/sex-on-the-beach.png' },
-                { id: 1, title: 'Pisco Sour', image: 'https://example.com/pisco-sour.png' },
-            ],
-        },
-        {
-            id: 5,
-            title: 'Lista sin Alcohol',
-            items: [
-                { id: 9, title: 'Limonada Menta Jengibre', image: 'https://example.com/limonada.png' },
-                { id: 10, title: 'Mocktail Tropical', image: 'https://example.com/mocktail.png' },
-                { id: 7, title: 'Tequila Sunrise', image: 'https://example.com/tequila-sunrise.png' },
-                { id: 2, title: 'Mojito', image: 'https://example.com/mojito.png' },
-            ],
-        },
-        {
-            id: 6,
-            title: 'Lista Experimental',
-            items: [
-                { id: 11, title: 'Smoked Negroni', image: 'https://example.com/smoked-negroni.png' },
-                { id: 7, title: 'Tequila Sunrise', image: 'https://example.com/tequila-sunrise.png' },
-                { id: 12, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-            ],
+            fetchAlcoholListRelationsByListId,
+            fetchAlcoholes 
         },
     ];
     // Objeto que almacena el stock ingresado
-    const [stock, setStock] = useState<{ id: number, title: string, image: string, manualStock: number, aiStock: number }[]>();
+    const [stock, setStock] = useState<{ id: number | null, nombre: string, imagen: string, manualStock: number, aiStock: number }[]>();
     const [openCamera, setOpenCamera] = useState(false);
     const [scanDrinkId, setScanDrinkId] = useState<number | null>(null);
     const [hasPermission, setHasPermission] = useState(true);
     const [openModalWarning, setOpenModalWarning] = useState(false);
     const [openModalConfirm, setOpenModalConfirm] = useState(false);
     const params = useLocalSearchParams();
+
     useEffect(() => {
-        const getList = (id: number) => {
-            return listas.find((l: { id: number, title: string, items: { id: number, title: string, image: string }[] }) => l.id == id);
+    const fetchData = async () => {
+        try {
+            const idLista = parseInt(Array.isArray(params.listId) ? params.listId[0] : params.listId);
+            const response = await fetch(`${API_URL}/Lista_a_alcohol/${idLista}/filtrar_lista/`);
+            const relaciones = await response.json(); // [{id:1, id_alcohol:3}, ...]
+
+            const tragos = await Promise.all(
+                relaciones.map(async (item: any) => {
+                    const response = await fetch(`${API_URL}/alcohol/${item.idalcohol}/`);
+                    const data = await response.json(); // { id, titulo, imagen, etc }
+                    
+                    return {
+                        id: data.id,
+                        nombre: data.nombre,
+                        imagen: data.imagen || null, // usa esto si tu objeto tiene campo 'imagen'
+                        manualStock: -1,
+                        aiStock: 0,
+                    };
+                })
+            );
+            console.log(tragos)
+
+            setStock(tragos);
+        } catch (error) {
+            console.error("Error cargando tragos:", error);
         }
-        let listId = parseInt(Array.isArray(params.listId) ? params.listId[0] : params.listId);
-        let newDrinks = getList(listId)?.items.map((item) => ({ ...item, manualStock: -1, aiStock: 0 }));
-        setStock(newDrinks);
-        (async () => {
-            const { status } = await Camera.requestCameraPermissionsAsync();
-            setHasPermission(status === 'granted');
-        })();
+    };
+
+    fetchData();
+
+    (async () => {
+        const { status } = await Camera.requestCameraPermissionsAsync();
+        setHasPermission(status === 'granted');
+    })();
     }, []);
-    const handleTakePicture = (id: number) => {
+
+    const handleTakePicture = (id: number | null) => {
         setScanDrinkId(id);
         setOpenCamera(true);
     }
@@ -130,14 +93,15 @@ export default function stock() {
                 <Text style={styles.textIntrucction}></Text>
                 <ScrollView style={styles.barsContainer} pointerEvents={openModalConfirm || openModalWarning ? 'none' : 'auto'}>
                     {
-                        stock && stock.map((drink, index) => (
-                            <View style={styles.itemContainer} key={drink.id}>
+                        stock && stock.map((tragos, index) => (
+                            <View style={styles.itemContainer} key={tragos.id}>
                                 <Image
-                                    source={require('@/assets/images/trago.jpg')}
+                                    source={{ uri: tragos.imagen }}
                                     style={styles.image}
                                 />
-                                <View style={styles.rightContainer}>
-                                    <Text style={styles.text}>{drink.title}</Text>
+                                
+                                    <View style={styles.rightContainer}>
+                                        <Text style={styles.text}>{tragos.nombre}</Text>
                                     <View style={styles.middleContainer}>
                                         <View style={styles.manualInputContainer}>
                                             <TouchableOpacity
@@ -149,7 +113,7 @@ export default function stock() {
                                                     }
                                                     setStock(updatedStock);
                                                 }}
-                                                disabled={drink.manualStock < 0}
+                                                disabled={tragos.manualStock < 0}
                                             >
                                                 <Text style={styles.inputButton}>-</Text>
                                             </TouchableOpacity>
@@ -164,7 +128,7 @@ export default function stock() {
                                                     };
                                                     setStock(updatedDrinks);
                                                 }}
-                                                value={drink.manualStock < 0 ? '-' : drink.manualStock.toString()}
+                                                value={tragos.manualStock < 0 ? '-' : tragos.manualStock.toString()}
                                             />
                                             <TouchableOpacity
                                                 onPress={() => {
@@ -179,16 +143,16 @@ export default function stock() {
                                             </TouchableOpacity>
                                         </View>
                                         <View style={styles.scanContainer}>
-                                            <TouchableOpacity onPress={() => { handleTakePicture(drink.id) }}>
+                                            <TouchableOpacity onPress={() => { handleTakePicture(tragos.id) }}>
                                                 <Image
                                                     source={require('@/assets/images/icon-scan.png')}
                                                     style={styles.icon}
                                                 />
                                             </TouchableOpacity>
-                                            <Text style={styles.textAi}>{drink.aiStock < 0 ? '-' : drink.aiStock.toFixed(2)}</Text>
+                                            <Text style={styles.textAi}>{tragos.aiStock < 0 ? '-' : tragos.aiStock.toFixed(2)}</Text>
                                         </View>
                                     </View>
-                                    <Text style={styles.textTotal}>TOTAL: {drink.manualStock < 0 ? '' : (drink.manualStock + drink.aiStock).toFixed(2)}</Text>
+                                    <Text style={styles.textTotal}>TOTAL: {tragos.manualStock < 0 ? '' : (tragos.manualStock + tragos.aiStock).toFixed(2)}</Text>
                                 </View>
                             </View>
                         ))
@@ -201,7 +165,7 @@ export default function stock() {
             </View >
             {/* Camara */}
             {openCamera && stock != undefined &&
-                <ScanDrink drinkId={scanDrinkId} closeCamera={() => setOpenCamera(false)} stock={stock} setStock={setStock} />
+                <ScanDrink drinkId={scanDrinkId} closeCamera={() => setOpenCamera(false)} stock={stock} setStock={setStock} onEstimationComplete={()=>console.log("hola")}/>
             }
             {/* Modal Warning */}
             {openModalWarning &&
@@ -243,6 +207,7 @@ const styles = StyleSheet.create({
         borderColor: Colors.dark.text,
 
     },
+
     textIntrucction: {
         color: Colors.dark.text,
         textAlign: 'center',

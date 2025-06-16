@@ -4,7 +4,7 @@ import { BarItem } from '@/components/BarItem';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {createBarraValidando } from '@/utils/barService';
+import {createBarraValidando, updateBarra } from '@/utils/barService';
 import API_URL from '@/constants/Api';
 
 
@@ -64,11 +64,16 @@ export default function Bars() {
         setBarras(prev => prev.filter(barra => barra.id !== id));
     };
 
-    const AssignList = (barraId: number, listId: number) => {
+    const AssignList = async (barraId: number, listId: number) => {
+    try {
+        await updateBarra(barraId, { idlista: listId }); // Actualiza en backend
         setBarras(prev =>
             prev.map(barra => (barra.id === barraId ? { ...barra, list: listId } : barra))
         );
-    };
+    } catch (error) {
+        console.error("Error actualizando lista:", error);
+    }
+};
     const [showModal, setShowModal] = useState(false);
     const [newBarName, setNewBarName] = useState('');
 

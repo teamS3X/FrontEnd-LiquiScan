@@ -67,3 +67,19 @@ export const createBarraValidando = async (idadministrador: number, nombrebarra:
     });
 };
 
+export const updateBarra = async (idBarra: number, updatedFields: Partial<Barra>) => {
+    const response = await fetch(`${API_URL}/barra/${idBarra}/`, {
+        method: 'PATCH',  // O 'PUT' si necesitas reemplazar todos los campos
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedFields),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Error al actualizar la barra');
+    }
+
+    return await response.json();  // Respuesta actualizada de la barra
+};
