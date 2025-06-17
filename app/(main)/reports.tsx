@@ -1,39 +1,117 @@
-import { AlcoholUsage, DailyReportSummary } from '@/components/DailyReportSummary';
+import { useState, useEffect } from 'react';
+import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+
+import { DailyReportSummary, AlcoholUsage } from '@/components/DailyReportSummary';
 import { ReportCalendar } from '@/components/ReporteCalendar';
 import { Colors } from '@/constants/Colors';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+
+import {getAdminId} from '@/utils/auth'
+import { fetchListasPorAdministrador, createBarraValidando } from '@/utils/barService';
+import { fetchAlcoholes } from '@/utils/listsService';
+import { getReportesPorAdministrador, getInventariosPorReporte } from '@/utils/ReporteService';
+
+interface Barra {
+  id: number;
+  nombrebarra: string;
+  idadministrador: number;
+  idlista: number;
+}
+
+interface Reporte {
+  id: number;
+  fecha: string;
+  bartender: string;
+  idbarra: number;
+}
+
+interface Alcohol {
+  id: number;
+  nombre: string;
+  marca: string;
+  descripcion?: string;
+  imagen?: string;
+}
 
 export default function Reports() {
+  const [selectedBar, setSelectedBar] = useState<number | undefined>(undefined);
+  const [bars, setBars] = useState<Barra[]>([]);
+  const [daysWithData, setDaysWithData] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [reportData, setReportData] = useState<AlcoholUsage[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const fakeReports: { [key: string]: AlcoholUsage[] } = {
-    '2025-06-04': [
-      {
-        name: 'Pisco',
-        brand: 'Alto del Carmen',
-        description: 'Pisco chileno 35º 1L. Frutal y suave.',
-        bottlesUsed: 3,
-        ouncesUsed: 8,
-        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Alto_del_Carmen.png/200px-Alto_del_Carmen.png',
-      },
-      {
-        name: 'Ron',
-        brand: 'Havana Club',
-        description: 'Ron añejo cubano. 7 años.',
-        bottlesUsed: 1,
-        ouncesUsed: 10,
-        image: 'https://www.ronhavanaclub.com/sites/default/files/styles/product/public/2021-06/bottle-havana-club-7yo.png',
-      },
-      {
-        name: 'Whisky',
-        brand: 'Jameson',
-        description: 'Whisky irlandés triple destilado.',
-        bottlesUsed: 2,
-        ouncesUsed: 4,
-        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Jameson_Irish_Whiskey_Bottle.png/200px-Jameson_Irish_Whiskey_Bottle.png',
-      },
-    ],
+  useEffect(() => {
+    const fetchBars = async () => {
+      try {
+        const idAdministrador = await getAdminId();
+        if (idAdministrador === null) {
+          console.warn('No se encontró idadministrador en AsyncStorage');
+          return;
+        }
+        const listas = await fetchListasPorAdministrador(idAdministrador);
+        const barras = listas.map((lista: any) => ({
+          id: lista.id,
+          nombrebarra: lista.nombrelista,
+          idadministrador: idAdministrador,
+          idlista: lista.id,
+        }));
+        setBars(barras);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchBars();
+  }, []);
+
+  const loadReportsForBar = async () => {
+    setSelectedDate(null);
+    setLoading(true);
+    try {
+      const idAdministrador = await getAdminId();
+      const reportes = await getReportesPorAdministrador(idAdministrador);
+      const fechas = reportes.map((r) => r.fecha);
+      setDaysWithData(fechas);
+    } catch (err) {
+      console.error(err);
+      setDaysWithData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadReportDetails = async (date: Date) => {
+    if (!selectedBar) return;
+    setLoading(true);
+    try {
+      const idAdministrador = await getAdminId(); // ✅ Aquí obtienes el ADMIN ID correcto
+      const reportes = await getReportesPorAdministrador(idAdministrador)
+      const dateStr = getFormattedDateKey(date);
+      const reporte = reportes.find((r) => r.fecha === dateStr);
+      if (!reporte) return;
+
+      const inventario = await getInventariosPorReporte(reporte.id);
+      const alcoholes: Alcohol[] = await fetchAlcoholes();
+
+      const fullReport: AlcoholUsage[] = inventario.map((item) => {
+        const alcoholInfo = alcoholes.find((a) => a.id === item.alcohol);
+        return {
+          name: alcoholInfo?.nombre || 'Desconocido',
+          brand: alcoholInfo?.marca || '',
+          description: alcoholInfo?.descripcion || '',
+          bottlesUsed: item.stock_normal,
+          ouncesUsed: item.stock_ia,
+          image: alcoholInfo?.imagen || '',
+        };
+      });
+      setReportData(fullReport);
+    } catch (err) {
+      console.error(err);
+      setReportData([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getFormattedDateKey = (date: Date) =>
@@ -43,20 +121,40 @@ export default function Reports() {
     <ScrollView style={{ backgroundColor: Colors.dark.background }} contentContainerStyle={styles.container} showsVerticalScrollIndicator={true}>
       <Text style={styles.title}>REPORTES</Text>
 
-      <View style={styles.calendarContainer}>
-        <ReportCalendar
-          daysWithData={Object.keys(fakeReports)}
-          onSelectDate={(date) => {
-            setSelectedDate(date);
+      {/* Selector de barra */}
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={selectedBar}
+          onValueChange={(value: number | null) => {
+            setSelectedBar(value);
+            if (value !== null) loadReportsForBar(value);
           }}
-        />
+          style={{ color: Colors.dark.text }}
+        >
+          <Picker.Item label="Seleccionar Barra" value={undefined} />
+          {bars.map((bar) => (
+            <Picker.Item key={bar.id} label={bar.nombrebarra} value={bar.id} />
+          ))}
+        </Picker>
       </View>
+      {loading && <ActivityIndicator size="large" color={Colors.dark.text} />}
 
-      {selectedDate && (
-        <DailyReportSummary
-          date={selectedDate}
-          data={fakeReports[getFormattedDateKey(selectedDate)] || []}
-        />
+      {/* Calendario */}
+      {selectedBar && !loading && (
+        <View style={styles.calendarContainer}>
+          <ReportCalendar
+            daysWithData={daysWithData}
+            onSelectDate={(date) => {
+              setSelectedDate(date);
+              loadReportDetails(date);
+            }}
+          />
+        </View>
+      )}
+
+      {/* Reporte del día */}
+      {selectedDate && reportData.length > 0 && (
+        <DailyReportSummary date={selectedDate} data={reportData} />
       )}
     </ScrollView>
   );
@@ -76,6 +174,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: Colors.dark.text,
     textTransform: 'uppercase',
+  },
+  pickerContainer: {
+    marginHorizontal: 24,
+    marginVertical: 12,
+    backgroundColor: Colors.dark.card,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   calendarContainer: {
     paddingHorizontal: 24,

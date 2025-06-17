@@ -2,179 +2,221 @@ import { View, Text, StyleSheet, ScrollView, Image, TextInput, TouchableOpacity 
 import { Button } from '@/components/Button';
 import { Colors } from '@/constants/Colors';
 import { router, useLocalSearchParams } from 'expo-router';
-import { clearSession } from '@/utils/session';
 import { useEffect, useState } from 'react';
 import { Camera } from 'expo-camera';
 import { ScanDrink } from '@/components/ScanDrink';
-import { fetchBarras, fetchListasPorAdministrador } from '@/utils/barService';
-import { fetchAlcoholes, fetchAlcoholListRelationsByListId } from '@/utils/listsService';
 import API_URL from '@/constants/Api';
-export default function stock() {
-    const listas = [
-        {
-            fetchAlcoholListRelationsByListId,
-            fetchAlcoholes 
-        },
-    ];
-    // Objeto que almacena el stock ingresado
-    const [stock, setStock] = useState<{ id: number | null, nombre: string, imagen: string, manualStock: number, aiStock: number }[]>();
+
+export default function Stock() {
+    const params = useLocalSearchParams();
+    const listId = parseInt(Array.isArray(params.listId) ? params.listId[0] : params.listId);
+    const barId = parseInt(Array.isArray(params.barId) ? params.barId[0] : params.barId);
+    const barTitle = Array.isArray(params.barTitle) ? params.barTitle[0] : params.barTitle;
+    
+
+    const [stock, setStock] = useState<{ id: number | null, nombre: string, imagen: string, manualStock: number, aiStock: number }[]>([]);
     const [openCamera, setOpenCamera] = useState(false);
     const [scanDrinkId, setScanDrinkId] = useState<number | null>(null);
     const [hasPermission, setHasPermission] = useState(true);
     const [openModalWarning, setOpenModalWarning] = useState(false);
     const [openModalConfirm, setOpenModalConfirm] = useState(false);
-    const params = useLocalSearchParams();
+    
 
     useEffect(() => {
-    const fetchData = async () => {
-        try {
-            const idLista = parseInt(Array.isArray(params.listId) ? params.listId[0] : params.listId);
-            const response = await fetch(`${API_URL}/Lista_a_alcohol/${idLista}/filtrar_lista/`);
-            const relaciones = await response.json(); // [{id:1, id_alcohol:3}, ...]
+        
 
-            const tragos = await Promise.all(
-                relaciones.map(async (item: any) => {
-                    const response = await fetch(`${API_URL}/alcohol/${item.idalcohol}/`);
-                    const data = await response.json(); // { id, titulo, imagen, etc }
-                    
-                    return {
-                        id: data.id,
-                        nombre: data.nombre,
-                        imagen: data.imagen || null, // usa esto si tu objeto tiene campo 'imagen'
-                        manualStock: -1,
-                        aiStock: 0,
-                    };
-                })
-            );
-            console.log(tragos)
+        
 
-            setStock(tragos);
-        } catch (error) {
-            console.error("Error cargando tragos:", error);
-        }
-    };
+        const fetchData = async () => {
+            try {
+                const response = await fetch(`${API_URL}/Lista_a_alcohol/${listId}/filtrar_lista/`);
+                const relaciones = await response.json();
 
-    fetchData();
+                const tragos = await Promise.all(
+                    relaciones.map(async (item: any) => {
+                        const response = await fetch(`${API_URL}/alcohol/${item.idalcohol}/`);
+                        const data = await response.json();
 
-    (async () => {
-        const { status } = await Camera.requestCameraPermissionsAsync();
-        setHasPermission(status === 'granted');
-    })();
+                        return {
+                            id: data.id,
+                            nombre: data.nombre,
+                            imagen: data.imagen || null,
+                            manualStock: -1,
+                            aiStock: 0,
+                        };
+                    })
+                );
+
+                setStock(tragos);
+            } catch (error) {
+                console.error("Error cargando tragos:", error);
+            }
+        };
+
+        fetchData();
+
+        (async () => {
+            const { status } = await Camera.requestCameraPermissionsAsync();
+            setHasPermission(status === 'granted');
+        })();
     }, []);
 
     const handleTakePicture = (id: number | null) => {
         setScanDrinkId(id);
         setOpenCamera(true);
-    }
-    const handleAccept = async () => {
-        const lista = stock?.filter((item) => item.manualStock < 0);
-        if (lista?.length == 0) {
+    };
+
+    const handleAccept = () => {
+        const pendientes = stock.filter(item => item.manualStock < 0);
+        if (pendientes.length === 0) {
             setOpenModalConfirm(true);
-        }
-        else {
+        } else {
             setOpenModalWarning(true);
         }
-    }
+    };
+  
     const handleBack = () => {
         router.back();
     };
-    const handleSaveData = () => {
-        console.log('Saving...');
-        console.log(stock);
+
+    const handleSaveData = async () => {
+    try {
+        // Primero creamos el reporte
+        const responseReporte = await fetch(`${API_URL}/reportes/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+            fecha: new Date().toISOString().slice(0, 10),
+            bartender: "NOMBRE_BARTENDER",
+            idbarra: barId,
+            barra: barTitle,
+            inventarios: stock.map(item => ({
+                alcohol: item.id,
+                stock_normal: Math.max(0, item.manualStock),
+                stock_ia: item.aiStock,
+            })),
+        }),
+    });
+
+    if (!responseReporte.ok) throw new Error("Error al crear reporte");
+
+    console.log("Reporte creado correctamente");
+
+        if (!responseReporte.ok) throw new Error("Error al crear reporte");
+        console.log("Reporte creado correctamente");
+
+        // Ahora actualizamos el stock de cada bebida individualmente (PUT)
+        await Promise.all(
+            stock.map(async (item) => {
+                const responseAlcohol = await fetch(`${API_URL}/alcohol/${item.id}/`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        stock_normal: Math.max(0, item.manualStock),
+                        stock_ia: item.aiStock
+                    })
+                });
+
+                if (!responseAlcohol.ok) {
+                    console.error(`Error actualizando alcohol ${item.id}`);
+                }
+            })
+        );
+
+        console.log("Stock actualizado correctamente");
         router.back();
+
+    } catch (err) {
+        console.error(err);
     }
+};
+
     return (
         <>
             <View style={styles.container}>
-                <Text style={styles.title}>
-                    {params.barTitle}
-                </Text>
+                <Text style={styles.title}>{barTitle}</Text>
 
-                <Text style={styles.textIntrucction}></Text>
                 <ScrollView style={styles.barsContainer} pointerEvents={openModalConfirm || openModalWarning ? 'none' : 'auto'}>
-                    {
-                        stock && stock.map((tragos, index) => (
-                            <View style={styles.itemContainer} key={tragos.id}>
-                                <Image
-                                    source={{ uri: tragos.imagen }}
-                                    style={styles.image}
-                                />
-                                
-                                    <View style={styles.rightContainer}>
-                                        <Text style={styles.text}>{tragos.nombre}</Text>
-                                    <View style={styles.middleContainer}>
-                                        <View style={styles.manualInputContainer}>
-                                            <TouchableOpacity
-                                                onPress={() => {
-                                                    const updatedStock = [...stock];
-                                                    updatedStock[index] = {
-                                                        ...updatedStock[index],
-                                                        manualStock: (updatedStock[index].manualStock || 0) - 1
-                                                    }
-                                                    setStock(updatedStock);
-                                                }}
-                                                disabled={tragos.manualStock < 0}
-                                            >
-                                                <Text style={styles.inputButton}>-</Text>
-                                            </TouchableOpacity>
-                                            <TextInput style={styles.textManual}
-                                                placeholder='0'
-                                                keyboardType='numeric'
-                                                onChangeText={(text) => {
-                                                    const updatedDrinks = [...stock];
-                                                    updatedDrinks[index] = {
-                                                        ...updatedDrinks[index],
-                                                        manualStock: parseInt(text) || 0
-                                                    };
-                                                    setStock(updatedDrinks);
-                                                }}
-                                                value={tragos.manualStock < 0 ? '-' : tragos.manualStock.toString()}
-                                            />
-                                            <TouchableOpacity
-                                                onPress={() => {
-                                                    const updatedStock = [...stock];
-                                                    updatedStock[index] = {
-                                                        ...updatedStock[index],
-                                                        manualStock: (updatedStock[index].manualStock || 0) + 1
-                                                    }
-                                                    setStock(updatedStock);
-                                                }}>
-                                                <Text style={styles.inputButton}>+</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                        <View style={styles.scanContainer}>
-                                            <TouchableOpacity onPress={() => { handleTakePicture(tragos.id) }}>
-                                                <Image
-                                                    source={require('@/assets/images/icon-scan.png')}
-                                                    style={styles.icon}
-                                                />
-                                            </TouchableOpacity>
-                                            <Text style={styles.textAi}>{tragos.aiStock < 0 ? '-' : tragos.aiStock.toFixed(2)}</Text>
-                                        </View>
+                    {stock.map((tragos, index) => (
+                        <View style={styles.itemContainer} key={tragos.id}>
+                            <Image source={{ uri: tragos.imagen }} style={styles.image} />
+                            <View style={styles.rightContainer}>
+                                <Text style={styles.text}>{tragos.nombre}</Text>
+                                <View style={styles.middleContainer}>
+                                    <View style={styles.manualInputContainer}>
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                const updatedStock = [...stock];
+                                                updatedStock[index].manualStock = (updatedStock[index].manualStock || 0) - 1;
+                                                setStock(updatedStock);
+                                            }}
+                                            disabled={tragos.manualStock < 0}
+                                        >
+                                            <Text style={styles.inputButton}>-</Text>
+                                        </TouchableOpacity>
+
+                                        <TextInput
+                                            style={styles.textManual}
+                                            placeholder='0'
+                                            keyboardType='numeric'
+                                            onChangeText={(text) => {
+                                                const updatedDrinks = [...stock];
+                                                updatedDrinks[index].manualStock = parseInt(text) || 0;
+                                                setStock(updatedDrinks);
+                                            }}
+                                            value={tragos.manualStock < 0 ? '-' : tragos.manualStock.toString()}
+                                        />
+
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                const updatedStock = [...stock];
+                                                updatedStock[index].manualStock = (updatedStock[index].manualStock || 0) + 1;
+                                                setStock(updatedStock);
+                                            }}
+                                        >
+                                            <Text style={styles.inputButton}>+</Text>
+                                        </TouchableOpacity>
                                     </View>
-                                    <Text style={styles.textTotal}>TOTAL: {tragos.manualStock < 0 ? '' : (tragos.manualStock + tragos.aiStock).toFixed(2)}</Text>
+
+                                    <View style={styles.scanContainer}>
+                                        <TouchableOpacity onPress={() => handleTakePicture(tragos.id)}>
+                                            <Image
+                                                source={require('@/assets/images/icon-scan.png')}
+                                                style={styles.icon}
+                                            />
+                                        </TouchableOpacity>
+                                        <Text style={styles.textAi}>{tragos.aiStock < 0 ? '-' : tragos.aiStock.toFixed(2)}</Text>
+                                    </View>
                                 </View>
+                                <Text style={styles.textTotal}>TOTAL: {tragos.manualStock < 0 ? '' : (tragos.manualStock + tragos.aiStock).toFixed(2)}</Text>
                             </View>
-                        ))
-                    }
-                </ScrollView >
+                        </View>
+                    ))}
+                </ScrollView>
+
                 <View style={styles.buttonContainer} pointerEvents={openModalConfirm || openModalWarning ? 'none' : 'auto'}>
                     <Button title='Volver' variant='secondary' onPress={handleBack} />
                     <Button title='Aceptar' onPress={handleAccept} />
                 </View>
-            </View >
-            {/* Camara */}
-            {openCamera && stock != undefined &&
-                <ScanDrink drinkId={scanDrinkId} closeCamera={() => setOpenCamera(false)} stock={stock} setStock={setStock} onEstimationComplete={()=>console.log("hola")}/>
+            </View>
+
+            {openCamera && stock.length > 0 &&
+                <ScanDrink
+                    drinkId={scanDrinkId}
+                    closeCamera={() => setOpenCamera(false)}
+                    stock={stock}
+                    setStock={setStock}
+                    onEstimationComplete={() => console.log("Estimación completa")}
+                />
             }
-            {/* Modal Warning */}
+
             {openModalWarning &&
                 <View style={styles.modalContainer}>
                     <Text style={styles.modalText}>Faltan elementos por contar</Text>
                     <Button title='Aceptar' onPress={() => setOpenModalWarning(false)} />
                 </View>
             }
-            {/* Modal Confirm */}
+
             {openModalConfirm &&
                 <View style={styles.modalContainer}>
                     <Text style={styles.modalText}>¿Desea enviar inventario?</Text>

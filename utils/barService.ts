@@ -83,3 +83,10 @@ export const updateBarra = async (idBarra: number, updatedFields: Partial<Barra>
 
     return await response.json();  // Respuesta actualizada de la barra
 };
+
+
+export const fetchBarraPorLista = async (idLista: number): Promise<Barra> => {
+    const response = await fetch(`${API_URL}/barra/${idLista}/por_lista/`);
+    if (!response.ok) throw new Error('Error al obtener barra vinculada a la lista');
+    return await response.json();
+};

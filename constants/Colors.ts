@@ -14,5 +14,6 @@ export const Colors = {
     softHighlight: '#2B2B2B',
     success: '#256D1B',
     error: '#BF211E',
+    card: '#1E1E1E',
   },
 };
