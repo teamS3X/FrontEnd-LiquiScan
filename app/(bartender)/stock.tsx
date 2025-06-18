@@ -232,10 +232,9 @@ export default function Stock() {
 
 const styles = StyleSheet.create({
     container: {
-        minHeight: '100%',
-        paddingBlock: 40,
-        position: 'relative',
+        flex: 1, 
         backgroundColor: Colors.dark.background,
+        paddingBottom: 20, 
     },
     title: {
         color: Colors.dark.text,
@@ -258,11 +257,9 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
     barsContainer: {
-        marginInline: 20,
         flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        paddingBlockEnd: 40,
+        paddingHorizontal: 20, 
+        paddingVertical: 20,
     },
     itemContainer: {
         borderColor: Colors.dark.text,
@@ -297,6 +294,7 @@ const styles = StyleSheet.create({
         width: 90,
         height: 110,
         objectFit: 'cover',
+        backgroundColor: '#ffffff',
     },
     text: {
         color: Colors.dark.text,
