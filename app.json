@@ -4,7 +4,7 @@
     "slug": "liquiScan",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/favicon.ico",
     "scheme": "liquiscan",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
