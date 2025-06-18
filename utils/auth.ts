@@ -163,3 +163,9 @@ export const refreshToken = async (): Promise<string> => {
         throw error;
     }
 }; 
+
+export const getAdminId = async (): Promise<number> => {
+    const idString = await AsyncStorage.getItem('id');
+    if (!idString) throw new Error("No se encontró el id del administrador");
+    return parseInt(idString, 10);
+};

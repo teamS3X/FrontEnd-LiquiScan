@@ -2,215 +2,221 @@ import { View, Text, StyleSheet, ScrollView, Image, TextInput, TouchableOpacity 
 import { Button } from '@/components/Button';
 import { Colors } from '@/constants/Colors';
 import { router, useLocalSearchParams } from 'expo-router';
-import { clearSession } from '@/utils/session';
 import { useEffect, useState } from 'react';
 import { Camera } from 'expo-camera';
 import { ScanDrink } from '@/components/ScanDrink';
+import API_URL from '@/constants/Api';
 
-export default function stock() {
-    const listas = [
-        {
-            id: 1,
-            title: 'Lista Clásica',
-            items: [
-                { id: 1, title: 'Pisco Sour', image: 'https://example.com/pisco-sour.png' },
-                { id: 2, title: 'Mojito', image: 'https://example.com/mojito.png' },
-                { id: 11, title: 'Smoked Negroni', image: 'https://example.com/smoked-negroni.png' },
-            ],
-        },
-        {
-            id: 12,
-            title: 'Lista Premium',
-            items: [
-                { id: 3, title: 'Old Fashioned', image: 'https://example.com/old-fashioned.png' },
-                { id: 11, title: 'Smoked Negroni', image: 'https://example.com/smoked-negroni.png' },
-                { id: 1, title: 'Pisco Sour', image: 'https://example.com/pisco-sour.png' },
-                { id: 4, title: 'Martini', image: 'https://example.com/martini.png' },
-                { id: 9, title: 'Limonada Menta Jengibre', image: 'https://example.com/limonada.png' },
-                { id: 10, title: 'Mocktail Tropical', image: 'https://example.com/mocktail.png' },
-                { id: 7, title: 'Tequila Sunrise', image: 'https://example.com/tequila-sunrise.png' },
-                { id: 2, title: 'Mojito', image: 'https://example.com/mojito.png' },
-                { id: 5, title: 'Caipirinha', image: 'https://example.com/caipirinha.png' },
-                { id: 6, title: 'Daiquiri', image: 'https://example.com/daiquiri.png' },
-                { id: 8, title: 'Sex on the Beach', image: 'https://example.com/sex-on-the-beach.png' },
-                { id: 13, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-                { id: 14, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-                { id: 15, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-                { id: 16, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-                { id: 17, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-                { id: 18, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-            ],
-        },
-        {
-            id: 3,
-            title: 'Lista Refrescante',
-            items: [
-                { id: 5, title: 'Caipirinha', image: 'https://example.com/caipirinha.png' },
-                { id: 6, title: 'Daiquiri', image: 'https://example.com/daiquiri.png' },
-                { id: 2, title: 'Mojito', image: 'https://example.com/mojito.png' },
-            ],
-        },
-        {
-            id: 4,
-            title: 'Lista Fiestera',
-            items: [
-                { id: 7, title: 'Tequila Sunrise', image: 'https://example.com/tequila-sunrise.png' },
-                { id: 8, title: 'Sex on the Beach', image: 'https://example.com/sex-on-the-beach.png' },
-                { id: 1, title: 'Pisco Sour', image: 'https://example.com/pisco-sour.png' },
-            ],
-        },
-        {
-            id: 5,
-            title: 'Lista sin Alcohol',
-            items: [
-                { id: 9, title: 'Limonada Menta Jengibre', image: 'https://example.com/limonada.png' },
-                { id: 10, title: 'Mocktail Tropical', image: 'https://example.com/mocktail.png' },
-                { id: 7, title: 'Tequila Sunrise', image: 'https://example.com/tequila-sunrise.png' },
-                { id: 2, title: 'Mojito', image: 'https://example.com/mojito.png' },
-            ],
-        },
-        {
-            id: 6,
-            title: 'Lista Experimental',
-            items: [
-                { id: 11, title: 'Smoked Negroni', image: 'https://example.com/smoked-negroni.png' },
-                { id: 7, title: 'Tequila Sunrise', image: 'https://example.com/tequila-sunrise.png' },
-                { id: 12, title: 'Lavender Mule', image: 'https://example.com/lavender-mule.png' },
-            ],
-        },
-    ];
-    // Objeto que almacena el stock ingresado
-    const [stock, setStock] = useState<{ id: number, title: string, image: string, manualStock: number, aiStock: number }[]>();
+export default function Stock() {
+    const params = useLocalSearchParams();
+    const listId = parseInt(Array.isArray(params.listId) ? params.listId[0] : params.listId);
+    const barId = parseInt(Array.isArray(params.barId) ? params.barId[0] : params.barId);
+    const barTitle = Array.isArray(params.barTitle) ? params.barTitle[0] : params.barTitle;
+    
+
+    const [stock, setStock] = useState<{ id: number | null, nombre: string, imagen: string, manualStock: number, aiStock: number }[]>([]);
     const [openCamera, setOpenCamera] = useState(false);
     const [scanDrinkId, setScanDrinkId] = useState<number | null>(null);
     const [hasPermission, setHasPermission] = useState(true);
     const [openModalWarning, setOpenModalWarning] = useState(false);
     const [openModalConfirm, setOpenModalConfirm] = useState(false);
-    const params = useLocalSearchParams();
+    
+
     useEffect(() => {
-        const getList = (id: number) => {
-            return listas.find((l: { id: number, title: string, items: { id: number, title: string, image: string }[] }) => l.id == id);
-        }
-        let listId = parseInt(Array.isArray(params.listId) ? params.listId[0] : params.listId);
-        let newDrinks = getList(listId)?.items.map((item) => ({ ...item, manualStock: -1, aiStock: 0 }));
-        setStock(newDrinks);
+        
+
+        
+
+        const fetchData = async () => {
+            try {
+                const response = await fetch(`${API_URL}/Lista_a_alcohol/${listId}/filtrar_lista/`);
+                const relaciones = await response.json();
+
+                const tragos = await Promise.all(
+                    relaciones.map(async (item: any) => {
+                        const response = await fetch(`${API_URL}/alcohol/${item.idalcohol}/`);
+                        const data = await response.json();
+
+                        return {
+                            id: data.id,
+                            nombre: data.nombre,
+                            imagen: data.imagen || null,
+                            manualStock: -1,
+                            aiStock: 0,
+                        };
+                    })
+                );
+
+                setStock(tragos);
+            } catch (error) {
+                console.error("Error cargando tragos:", error);
+            }
+        };
+
+        fetchData();
+
         (async () => {
             const { status } = await Camera.requestCameraPermissionsAsync();
             setHasPermission(status === 'granted');
         })();
     }, []);
-    const handleTakePicture = (id: number) => {
+
+    const handleTakePicture = (id: number | null) => {
         setScanDrinkId(id);
         setOpenCamera(true);
-    }
-    const handleAccept = async () => {
-        const lista = stock?.filter((item) => item.manualStock < 0);
-        if (lista?.length == 0) {
+    };
+
+    const handleAccept = () => {
+        const pendientes = stock.filter(item => item.manualStock < 0);
+        if (pendientes.length === 0) {
             setOpenModalConfirm(true);
-        }
-        else {
+        } else {
             setOpenModalWarning(true);
         }
-    }
+    };
+  
     const handleBack = () => {
         router.back();
     };
-    const handleSaveData = () => {
-        console.log('Saving...');
-        console.log(stock);
+
+    const handleSaveData = async () => {
+    try {
+        // Primero creamos el reporte
+        const responseReporte = await fetch(`${API_URL}/reportes/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+            fecha: new Date().toISOString().slice(0, 10),
+            bartender: "NOMBRE_BARTENDER",
+            idbarra: barId,
+            barra: barTitle,
+            inventarios: stock.map(item => ({
+                alcohol: item.id,
+                stock_normal: Math.max(0, item.manualStock),
+                stock_ia: item.aiStock,
+            })),
+        }),
+    });
+
+    if (!responseReporte.ok) throw new Error("Error al crear reporte");
+
+    console.log("Reporte creado correctamente");
+
+        if (!responseReporte.ok) throw new Error("Error al crear reporte");
+        console.log("Reporte creado correctamente");
+
+        // Ahora actualizamos el stock de cada bebida individualmente (PUT)
+        await Promise.all(
+            stock.map(async (item) => {
+                const responseAlcohol = await fetch(`${API_URL}/alcohol/${item.id}/`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        stock_normal: Math.max(0, item.manualStock),
+                        stock_ia: item.aiStock
+                    })
+                });
+
+                if (!responseAlcohol.ok) {
+                    console.error(`Error actualizando alcohol ${item.id}`);
+                }
+            })
+        );
+
+        console.log("Stock actualizado correctamente");
         router.back();
+
+    } catch (err) {
+        console.error(err);
     }
+};
+
     return (
         <>
             <View style={styles.container}>
-                <Text style={styles.title}>
-                    {params.barTitle}
-                </Text>
+                <Text style={styles.title}>{barTitle}</Text>
 
-                <Text style={styles.textIntrucction}></Text>
                 <ScrollView style={styles.barsContainer} pointerEvents={openModalConfirm || openModalWarning ? 'none' : 'auto'}>
-                    {
-                        stock && stock.map((drink, index) => (
-                            <View style={styles.itemContainer} key={drink.id}>
-                                <Image
-                                    source={require('@/assets/images/trago.jpg')}
-                                    style={styles.image}
-                                />
-                                <View style={styles.rightContainer}>
-                                    <Text style={styles.text}>{drink.title}</Text>
-                                    <View style={styles.middleContainer}>
-                                        <View style={styles.manualInputContainer}>
-                                            <TouchableOpacity
-                                                onPress={() => {
-                                                    const updatedStock = [...stock];
-                                                    updatedStock[index] = {
-                                                        ...updatedStock[index],
-                                                        manualStock: (updatedStock[index].manualStock || 0) - 1
-                                                    }
-                                                    setStock(updatedStock);
-                                                }}
-                                                disabled={drink.manualStock < 0}
-                                            >
-                                                <Text style={styles.inputButton}>-</Text>
-                                            </TouchableOpacity>
-                                            <TextInput style={styles.textManual}
-                                                placeholder='0'
-                                                keyboardType='numeric'
-                                                onChangeText={(text) => {
-                                                    const updatedDrinks = [...stock];
-                                                    updatedDrinks[index] = {
-                                                        ...updatedDrinks[index],
-                                                        manualStock: parseInt(text) || 0
-                                                    };
-                                                    setStock(updatedDrinks);
-                                                }}
-                                                value={drink.manualStock < 0 ? '-' : drink.manualStock.toString()}
-                                            />
-                                            <TouchableOpacity
-                                                onPress={() => {
-                                                    const updatedStock = [...stock];
-                                                    updatedStock[index] = {
-                                                        ...updatedStock[index],
-                                                        manualStock: (updatedStock[index].manualStock || 0) + 1
-                                                    }
-                                                    setStock(updatedStock);
-                                                }}>
-                                                <Text style={styles.inputButton}>+</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                        <View style={styles.scanContainer}>
-                                            <TouchableOpacity onPress={() => { handleTakePicture(drink.id) }}>
-                                                <Image
-                                                    source={require('@/assets/images/icon-scan.png')}
-                                                    style={styles.icon}
-                                                />
-                                            </TouchableOpacity>
-                                            <Text style={styles.textAi}>{drink.aiStock < 0 ? '-' : drink.aiStock.toFixed(2)}</Text>
-                                        </View>
+                    {stock.map((tragos, index) => (
+                        <View style={styles.itemContainer} key={tragos.id}>
+                            <Image source={{ uri: tragos.imagen }} style={styles.image} />
+                            <View style={styles.rightContainer}>
+                                <Text style={styles.text}>{tragos.nombre}</Text>
+                                <View style={styles.middleContainer}>
+                                    <View style={styles.manualInputContainer}>
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                const updatedStock = [...stock];
+                                                updatedStock[index].manualStock = (updatedStock[index].manualStock || 0) - 1;
+                                                setStock(updatedStock);
+                                            }}
+                                            disabled={tragos.manualStock < 0}
+                                        >
+                                            <Text style={styles.inputButton}>-</Text>
+                                        </TouchableOpacity>
+
+                                        <TextInput
+                                            style={styles.textManual}
+                                            placeholder='0'
+                                            keyboardType='numeric'
+                                            onChangeText={(text) => {
+                                                const updatedDrinks = [...stock];
+                                                updatedDrinks[index].manualStock = parseInt(text) || 0;
+                                                setStock(updatedDrinks);
+                                            }}
+                                            value={tragos.manualStock < 0 ? '-' : tragos.manualStock.toString()}
+                                        />
+
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                const updatedStock = [...stock];
+                                                updatedStock[index].manualStock = (updatedStock[index].manualStock || 0) + 1;
+                                                setStock(updatedStock);
+                                            }}
+                                        >
+                                            <Text style={styles.inputButton}>+</Text>
+                                        </TouchableOpacity>
                                     </View>
-                                    <Text style={styles.textTotal}>TOTAL: {drink.manualStock < 0 ? '' : (drink.manualStock + drink.aiStock).toFixed(2)}</Text>
+
+                                    <View style={styles.scanContainer}>
+                                        <TouchableOpacity onPress={() => handleTakePicture(tragos.id)}>
+                                            <Image
+                                                source={require('@/assets/images/icon-scan.png')}
+                                                style={styles.icon}
+                                            />
+                                        </TouchableOpacity>
+                                        <Text style={styles.textAi}>{tragos.aiStock < 0 ? '-' : tragos.aiStock.toFixed(2)}</Text>
+                                    </View>
                                 </View>
+                                <Text style={styles.textTotal}>TOTAL: {tragos.manualStock < 0 ? '' : (tragos.manualStock + tragos.aiStock).toFixed(2)}</Text>
                             </View>
-                        ))
-                    }
-                </ScrollView >
+                        </View>
+                    ))}
+                </ScrollView>
+
                 <View style={styles.buttonContainer} pointerEvents={openModalConfirm || openModalWarning ? 'none' : 'auto'}>
                     <Button title='Volver' variant='secondary' onPress={handleBack} />
                     <Button title='Aceptar' onPress={handleAccept} />
                 </View>
-            </View >
-            {/* Camara */}
-            {openCamera && stock != undefined &&
-                <ScanDrink drinkId={scanDrinkId} closeCamera={() => setOpenCamera(false)} stock={stock} setStock={setStock} />
+            </View>
+
+            {openCamera && stock.length > 0 &&
+                <ScanDrink
+                    drinkId={scanDrinkId}
+                    closeCamera={() => setOpenCamera(false)}
+                    stock={stock}
+                    setStock={setStock}
+                    onEstimationComplete={() => console.log("Estimación completa")}
+                />
             }
-            {/* Modal Warning */}
+
             {openModalWarning &&
                 <View style={styles.modalContainer}>
                     <Text style={styles.modalText}>Faltan elementos por contar</Text>
                     <Button title='Aceptar' onPress={() => setOpenModalWarning(false)} />
                 </View>
             }
-            {/* Modal Confirm */}
+
             {openModalConfirm &&
                 <View style={styles.modalContainer}>
                     <Text style={styles.modalText}>¿Desea enviar inventario?</Text>
@@ -243,6 +249,7 @@ const styles = StyleSheet.create({
         borderColor: Colors.dark.text,
 
     },
+
     textIntrucction: {
         color: Colors.dark.text,
         textAlign: 'center',
