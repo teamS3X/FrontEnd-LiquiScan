@@ -1,30 +1,33 @@
 import { View, Text, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { Colors } from '@/constants/Colors';
-import { TragosList } from '@/components/TragosList';
+import CategorySection from '@/components/CategorySection';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Dropdown } from '@/components/Dropdown';
 import { Pin } from '@/components/Pin';
 import { Drink } from '@/types/drinks';
-import { createList, fetchAlcoholes, saveAlcoholListRelation, fetchListsByAdmin, fetchAlcoholListRelationsByListId } from '@/utils/listsService';
+import {
+    createList,
+    fetchAlcoholes,
+    saveAlcoholListRelation,
+    fetchListsByAdmin,
+    fetchAlcoholListRelationsByListId,
+} from '@/utils/listsService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 
 export default function Lists() {
     const { width, height } = useWindowDimensions();
     const [showModal, setShowModal] = useState(false);
-
     const [drinkslist, setDrinksList] = useState<Drink[]>([]);
-
     const [categories, setCategories] = useState<string[]>([]);
     const [idadmin, setidadmin] = useState<number | null>(null);
-
     const [lists, setLists] = useState<{ id: number; title: string; items: Drink[] }[]>([]);
     const [selectedListId, setSelectedListId] = useState<number | null>(null);
-    const [selectedList, setSelectedList] = useState([]);
+    const [selectedList, setSelectedList] = useState<number[]>([]);
     const [newListName, setNewListName] = useState('');
     const [listDrinkRelation, setListDrinkRelation] = useState([]);
+
     const fetchLists = async () => {
         if (idadmin !== null) {
             try {
@@ -40,31 +43,28 @@ export default function Lists() {
                         };
                     })
                 );
-
                 setLists(listsWithItems);
             } catch (error) {
                 console.error("Failed to fetch lists by admin:", error);
             }
         }
     };
+
     const fetchListDrinkRelation = async () => {
         if (selectedListId != null) {
             const listDrinks = await fetchAlcoholListRelationsByListId(selectedListId);
-
-            const newList = listDrinks.filter((relation:any) => (relation.idlista === selectedListId));
+            const newList = listDrinks.filter((relation: any) => relation.idlista === selectedListId);
             setListDrinkRelation(listDrinks);
-
             const alcoholIds = newList.map((item: any) => item.idalcohol);
             setSelectedList(alcoholIds);
-        }
-        else {
+        } else {
             setSelectedList([]);
         }
-    }
+    };
 
-    const updateSelectedList = (newSelected:any) => {
+    const updateSelectedList = (newSelected: number[]) => {
         setSelectedList(newSelected);
-    }
+    };
 
     const handleSaveList = async () => {
         if (newListName === '') {
@@ -73,12 +73,9 @@ export default function Lists() {
         }
         const idList = await createList({ nombre: newListName, idadministrador: idadmin });
         for (const s of selectedList) {
-            console.log(s);
-            const relation = { idlista: idList.id, idalcohol: s }
-            console.log(relation);
+            const relation = { idlista: idList.id, idalcohol: s };
             await saveAlcoholListRelation(relation);
         }
-        // setSelectedListId(idList.id);
         setShowModal(false);
         fetchLists();
         fetchListDrinkRelation();
@@ -90,12 +87,44 @@ export default function Lists() {
         setLists(prev => prev.filter(l => l.id !== selectedListId));
         setSelectedListId(null);
     };
+
+    const handleToggleCategory = (category: string, selectAll: boolean) => {
+        const filteredIds = drinkslist.filter((item: any) => item.categoria === category).map(item => item.id);
+        if (selectAll) {
+            const newSelection = Array.from(new Set([...selectedList, ...filteredIds]));
+            setSelectedList(newSelection);
+        } else {
+            const newSelection = selectedList.filter(id => !filteredIds.includes(id));
+            setSelectedList(newSelection);
+        }
+    };
+
+    const handleSelectAll = () => {
+        const allIds = drinkslist.map(d => d.id);
+        setSelectedList(allIds);
+    };
+
+    const handleDeselectAll = () => {
+        setSelectedList([]);
+    };
+
+    const getButtonLabel = (category: string, selectAll: boolean): string => {
+        const categoryUpper = category.toUpperCase();
+        if (categoryUpper === 'CERVEZAS') {
+            return selectAll ? `Seleccionar todas las ${category}` : `Deseleccionar todas las ${category}`;
+        } else if (categoryUpper === 'OTROS') {
+            return selectAll ? `Seleccionar todos de ${category}` : `Deseleccionar todos de ${category}`;
+        } else {
+            return selectAll ? `Seleccionar todos los ${category}` : `Deseleccionar todos los ${category}`;
+        }
+    };
+
     useEffect(() => {
         const getid = async () => {
             const idString = await AsyncStorage.getItem('id');
             const idadmin = idString ? parseInt(idString, 10) : null;
             setidadmin(idadmin);
-        }
+        };
         getid();
         const loadDrinks = async () => {
             try {
@@ -109,54 +138,53 @@ export default function Lists() {
         };
         loadDrinks();
     }, []);
+
     useEffect(() => {
         fetchLists();
         fetchListDrinkRelation();
     }, [idadmin]);
-    useEffect(() => {
-        console.log('Actualiza listDrinkRelation', listDrinkRelation);
-    }, [listDrinkRelation]);
+
     useEffect(() => {
         fetchListDrinkRelation();
-    }, [selectedListId])
-
+    }, [selectedListId]);
 
     return (
         <>
             <View style={styles.topBarContainer}>
-                <Dropdown placeholder='Selecciona una lista' lists={lists} selectedId={selectedListId}
-                    onSelect={setSelectedListId} />
+                <Dropdown placeholder='Selecciona una lista' lists={lists} selectedId={selectedListId} onSelect={setSelectedListId} />
                 <View style={styles.topBarBottom}>
                     <Text style={styles.countText}> SELECCIONADOS: {selectedList.length}</Text>
-                    <Button title='Seleccionar todos' variant='secondary' size='small' onPress={() => console.log('todos')} />
-                    <Button title='Deseleccionar todos' variant='secondary' size='small' onPress={() => console.log('ninguno')} />
+                    <Button title='Seleccionar todos' variant='secondary' size='small' onPress={handleSelectAll} />
+                    <Button title='Deseleccionar todos' variant='secondary' size='small' onPress={handleDeselectAll} />
                 </View>
                 <Pin />
             </View>
             <ScrollView style={styles.container}>
-                {categories.map((c: string) => (
-                    <TragosList
-                        key={c}
-                        title={c}
-                        selectedList={selectedList}
-                        setSelected={updateSelectedList}
-                        list={drinkslist.filter((item: any) => item.categoria === c)}
-                    />
+                {categories.map((c: string, index: number) => (
+                    <View key={c} style={styles.sectionWrapper}>
+                        {index !== 0 && <View style={styles.sectionDivider} />}
+                        <CategorySection
+                            category={c}
+                            drinkslist={drinkslist}
+                            selectedList={selectedList}
+                            updateSelectedList={updateSelectedList}
+                            getButtonLabel={getButtonLabel}
+                            handleToggleCategory={handleToggleCategory}
+                        />
+                    </View>
                 ))}
-
             </ScrollView>
-            {selectedListId !== null &&
+            {selectedListId !== null ? (
                 <View style={styles.buttonContainer}>
                     <Button title='Guardar Lista' size='big' onPress={() => console.log('guardar')} />
                     <Button title='Eliminar lista' size='big' variant='secondary' onPress={handleDeleteList} />
                 </View>
-            }
-            {selectedListId === null &&
+            ) : (
                 <View style={styles.buttonContainer}>
                     <Button title="Crear lista" onPress={() => { setShowModal(true) }} size='big' />
                 </View>
-            }
-            {showModal &&
+            )}
+            {showModal && (
                 <View style={[styles.modalContainer, { width: width, height: height }]}>
                     <View style={styles.modal}>
                         <Text style={styles.modalTittle}>CREAR LISTA</Text>
@@ -167,7 +195,7 @@ export default function Lists() {
                         </View>
                     </View>
                 </View>
-            }
+            )}
         </>
     );
 }
@@ -193,20 +221,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 10,
     },
-    titleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
     countText: {
         color: Colors.dark.text,
-    },
-    reactLogo: {
-        height: 178,
-        width: 290,
-        bottom: 0,
-        left: 0,
-        position: 'absolute',
     },
     buttonContainer: {
         height: 80,
@@ -243,7 +259,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         alignItems: 'center',
         padding: 13,
-
     },
     modalTittle: {
         borderBottomWidth: 1,
@@ -258,4 +273,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 30,
     },
+    sectionWrapper: {
+    marginTop: 0,
+    marginBottom: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+},
+sectionDivider: {
+    height: 1,
+    backgroundColor: Colors.dark.text,
+    marginVertical: 0, // quita espacio arriba y abajo
+},
 });

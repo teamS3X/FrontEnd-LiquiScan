@@ -15,5 +15,6 @@ export const Colors = {
     success: '#256D1B',
     error: '#BF211E',
     card: '#1E1E1E',
+    border: '#444444',
   },
 };

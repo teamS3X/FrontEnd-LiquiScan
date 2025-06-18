@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Alert, ScrollView, Modal, TextInput, TouchableOpacity } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { StaffItem } from '@/components/StaffItem';
 import { useState, useEffect } from 'react';
@@ -9,6 +9,9 @@ import { fetchBartendersPorAdminConBarra, createBartender, updateBartender, dele
 export default function Staff() {
     const [staff, setStaff] = useState<{ id: number; name: string }[]>([]);
     const [adminId, setAdminId] = useState<number | null>(null);
+
+    const [modalVisible, setModalVisible] = useState(false);
+    const [newBartenderName, setNewBartenderName] = useState('');
 
     const loadBartenders = async (adminIdToUse: number) => {
         try {
@@ -35,24 +38,23 @@ export default function Staff() {
         fetchAdminId();
     }, []);
 
-    const handleCreateStaff = async () => {
+    const handleCreateStaff = () => setModalVisible(true);
+
+    const handleSave = async () => {
         if (!adminId) return Alert.alert("Error", "ID de administrador no encontrado");
 
-        const newName = prompt("Ingrese nombre del nuevo bartender:");
-
-        if (!newName || newName.trim() === '') {
+        if (!newBartenderName || newBartenderName.trim() === '') {
             return Alert.alert("Error", "Debe ingresar un nombre válido.");
         }
 
         try {
-            const newBartender = {
-                nombre: newName.trim(),
+            await createBartender({
+                nombre: newBartenderName.trim(),
                 idadministrador: adminId,
-            };
-
-            await createBartender(newBartender);
+            });
             await loadBartenders(adminId);
-            Alert.alert("Éxito", `Bartender "${newName}" creado correctamente.`);
+            setNewBartenderName('');
+            setModalVisible(false);
         } catch (error: any) {
             Alert.alert("Error", error.message || "No se pudo crear el bartender.");
         }
@@ -95,10 +97,32 @@ export default function Staff() {
             <View style={styles.buttonContainer}>
                 <Button title='Crear Bartender' size='big' onPress={handleCreateStaff} />
             </View>
+
+            <Modal transparent visible={modalVisible} animationType="fade">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modal}>
+                        <Text style={styles.modalTitle}>Crear Bartender</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Nombre del bartender"
+                            placeholderTextColor="#999"
+                            value={newBartenderName}
+                            onChangeText={setNewBartenderName}
+                        />
+                        <View style={styles.modalButtonContainer}>
+                            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                                <Text style={styles.saveButtonText}>GUARDAR</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+                                <Text style={styles.cancelButtonText}>CANCELAR</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
-
 
 const styles = StyleSheet.create({
     container: {
@@ -123,13 +147,62 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         height: 80,
-        backgroundColor: Colors.dark.background,
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 20,
         borderTopWidth: 1,
         borderColor: Colors.dark.text,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modal: {
+        backgroundColor: '#1e1e1e',
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        padding: 20,
+        width: 400, // ancho fijo más estrecho
+        maxWidth: '90%',
+    }, 
+
+    modalTitle: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 4,
+        padding: 10,
+        color: '#fff',
+        marginBottom: 20,
+    },
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    saveButton: {
+        backgroundColor: '#f1b100',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+    },
+    saveButtonText: {
+        fontWeight: 'bold',
+    },
+    cancelButton: {
+        borderColor: '#f1b100',
+        borderWidth: 1,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+    },
+    cancelButtonText: {
+        color: '#f1b100',
+        fontWeight: 'bold',
     },
 });
