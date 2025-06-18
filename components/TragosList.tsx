@@ -24,7 +24,6 @@ export const TragosList = ({ title, selectedList, setSelected, list }: ListProps
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>{title}</Text>
             <ScrollView horizontal style={styles.scrollContainer}>
                 <View style={styles.innerContainer}>
                     {list.map((item: any) => (
@@ -47,7 +46,7 @@ export const TragosList = ({ title, selectedList, setSelected, list }: ListProps
 
 const styles = StyleSheet.create({
     container: {
-        width: '90%',
+        width: '95%',
         height: 300,
         marginInline: 'auto',
     },

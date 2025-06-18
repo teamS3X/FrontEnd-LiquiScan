@@ -70,7 +70,7 @@ export const fetchListsByAdmin = async (adminId: number) => {
 
 export const fetchAlcoholListRelationsByListId = async (listId: number) => {
     try {
-        const response = await fetch(`${API_URL}/Lista_a_alcohol/?idlista=${listId}`);
+        const response = await fetch(`${API_URL}/Lista_a_alcohol/${listId}/filtrar_lista/`);
         if (!response.ok) throw new Error('Error al obtener relaciones lista-alcohol');
         return await response.json();
     } catch (error) {

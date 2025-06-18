@@ -5,6 +5,8 @@ import {
     StyleSheet,
     View,
     Modal,
+    ScrollView,
+    Pressable,
 } from 'react-native';
 import { Colors } from '@/constants/Colors';
 
@@ -55,22 +57,32 @@ export const Dropdown = ({
             <Modal visible={isOpen} transparent animationType="fade">
                 <TouchableOpacity style={styles.overlay} onPress={() => setIsOpen(false)}>
                     <View style={styles.dropdown}>
-                        <TouchableOpacity
-                            key={-1}
-                            style={styles.createList}
-                            onPress={() => handleSelect(null)}
+                        <Pressable
+                            style={({ hovered }) => [{ backgroundColor: Colors.dark.softHighlight }, hovered && { backgroundColor: Colors.dark.black }]}
                         >
-                            <Text style={styles.createListText}>Crear nueva lista</Text>
-                        </TouchableOpacity>
-                        {lists.map((list) => (
                             <TouchableOpacity
-                                key={list.id}
-                                style={styles.item}
-                                onPress={() => handleSelect(list.id)}
+                                key={-1}
+                                style={styles.createList}
+                                onPress={() => handleSelect(null)}
                             >
-                                <Text style={styles.itemText}>{list.title}</Text>
+                                <Text style={styles.createListText}>Crear nueva lista</Text>
                             </TouchableOpacity>
-                        ))}
+                        </Pressable>
+                        <ScrollView>
+                            {lists.map((list) => (
+                                <Pressable
+                                    style={({ hovered }) => [hovered && { backgroundColor: Colors.dark.black }]}
+                                >
+                                    <TouchableOpacity
+                                        key={list.id}
+                                        style={styles.item}
+                                        onPress={() => handleSelect(list.id)}
+                                    >
+                                        <Text style={styles.itemText}>{list.title}</Text>
+                                    </TouchableOpacity>
+                                </Pressable>
+                            ))}
+                        </ScrollView>
                     </View>
                 </TouchableOpacity>
             </Modal>
@@ -105,8 +117,8 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.dark.background,
         borderWidth: 1,
         borderColor: Colors.dark.text,
-        width: 250,
-        borderRadius: 5,
+        minWidth: 450,
+        maxHeight: '90%',
     },
     item: {
         padding: 12,
@@ -120,7 +132,6 @@ const styles = StyleSheet.create({
         padding: 12,
         borderBottomWidth: 1,
         borderColor: Colors.dark.text,
-        backgroundColor: Colors.dark.softHighlight,
     },
     createListText: {
         color: Colors.dark.text,

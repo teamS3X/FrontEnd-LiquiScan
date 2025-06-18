@@ -11,6 +11,7 @@ import { fetchListasPorAdministrador, createBarraValidando } from '@/utils/barSe
 import { fetchAlcoholes } from '@/utils/listsService';
 import { getReportesPorAdministrador, getInventariosPorReporte } from '@/utils/ReporteService';
 
+import { Pin } from '@/components/Pin';
 interface Barra {
   id: number;
   nombrebarra: string;

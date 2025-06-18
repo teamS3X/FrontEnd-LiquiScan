@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TextInput, Modal, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, Pressable, StyleSheet, TextInput, Modal, FlatList, TouchableOpacity } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { useState } from 'react';
 import { Button } from '@/components/Button';
@@ -47,19 +47,19 @@ export const BarItem = ({
                 <Text style={styles.title}>{title}</Text>
             )}
             <Text style={styles.listAssigned}>
-                Lista asignada: {assignedList ? assignedList.title : 'Ninguna'}
+                {assignedList ? assignedList.title : 'Ninguna'}
             </Text>
             <View style={styles.buttonContainer}>
                 {isEditing ? (
                     <>
-                        <Button title="Guardar" variant="primary" size="small" onPress={handleSave} />
-                        <Button title="Cancelar" variant="secondary" size="small" onPress={handleCancel} />
+                        <Button title="Guardar" variant="primary" onPress={handleSave} />
+                        <Button title="Cancelar" variant="secondary" onPress={handleCancel} />
                     </>
                 ) : (
                     <>
-                        <Button title="Asignar Lista" variant="primary" size="small" onPress={() => setModalVisible(true)} />
-                        <Button title="Editar" variant="secondary" size="small" onPress={() => setIsEditing(true)} />
-                        <Button title="Eliminar" variant="secondary" size="small" onPress={onDelete} />
+                        <Button title="Asignar Lista" size="big" variant={assignedList ? 'secondary' : 'primary'} onPress={() => setModalVisible(true)} />
+                        <Button title="Renombrar" variant="secondary" onPress={() => setIsEditing(true)} />
+                        <Button title="Eliminar" variant="secondary" onPress={onDelete} />
                     </>
                 )}
             </View>
@@ -73,21 +73,29 @@ export const BarItem = ({
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Selecciona una lista</Text>
                         <FlatList
+                            style={styles.listContainer}
                             data={lists}
                             keyExtractor={(item) => item.id.toString()}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    style={styles.listItem}
-                                    onPress={() => {
-                                        onAssignList(item.id);
-                                        setModalVisible(false);
-                                    }}
+                            renderItem={({ item, index }) => (
+                                <Pressable
+                                    style={({ hovered }) => [hovered && { backgroundColor: Colors.dark.black }]}
                                 >
-                                    <Text style={styles.listText}>{item.title}</Text>
-                                </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.listItem, index == 0 && { borderTopWidth: 1 }]}
+                                        onPress={() => {
+                                            onAssignList(item.id);
+                                            setModalVisible(false);
+                                        }}
+                                    >
+                                        <Text style={styles.listText}>{item.title}</Text>
+                                    </TouchableOpacity>
+
+                                </Pressable>
                             )}
                         />
-                        <Button title="Cerrar" variant="secondary" onPress={() => setModalVisible(false)} />
+                        <View style={styles.buttonWrapper}>
+                            <Button title="Cerrar" variant="secondary" onPress={() => setModalVisible(false)} />
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -97,21 +105,22 @@ export const BarItem = ({
 
 const styles = StyleSheet.create({
     container: {
-        height: 40,
         borderColor: Colors.dark.text,
         borderTopWidth: 1,
         borderLeftWidth: 1,
         borderRightWidth: 1,
         display: 'flex',
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-end',
         alignItems: 'center',
         paddingInline: 10,
+        paddingBlock: 10,
     },
     title: {
-        fontSize: 15,
+        fontSize: 16,
         textAlign: 'left',
         color: Colors.dark.text,
+        flex: 1,
     },
     buttonContainer: {
         display: 'flex',
@@ -132,15 +141,37 @@ const styles = StyleSheet.create({
         padding: 20,
         borderRadius: 10,
         width: '80%',
+        height: '90%',
+        maxWidth: 600,
+        display: 'flex',
+        alignItems: 'center',
     },
     modalTitle: {
         fontSize: 18,
         color: Colors.dark.text,
-        marginBottom: 10,
+        textTransform: 'uppercase',
+        width: '100%',
+        textAlign: 'center',
+        borderBottomWidth: 1,
+        paddingBottom: 10,
+        borderColor: Colors.dark.text,
+    },
+    listContainer: {
+        width: '100%',
+    },
+    buttonWrapper: {
+        paddingBlock: 10,
+        borderTopWidth: 1,
+        borderColor: Colors.dark.text,
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
     },
     listItem: {
         paddingVertical: 10,
+        paddingInline: 10,
         borderBottomWidth: 1,
+        borderInlineWidth: 1,
         borderColor: Colors.dark.text,
     },
     listText: {
@@ -148,7 +179,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     listAssigned: {
-        fontSize: 12,
+        fontSize: 16,
         color: Colors.dark.primary,
+        marginEnd: 40,
+        marginStart: 20,
     },
 });

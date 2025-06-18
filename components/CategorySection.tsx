@@ -23,7 +23,6 @@ export default function CategorySection({
     handleToggleCategory
 }: Props) {
     const [isHovered, setIsHovered] = useState(false);
-
     return (
         <Pressable
             onHoverIn={() => setIsHovered(true)}
@@ -33,26 +32,18 @@ export default function CategorySection({
             <View style={styles.categoryHeader}>
                 <Text style={styles.categoryTitle}>{category.toUpperCase()}</Text>
                 <View style={styles.categoryButtons}>
-                    <Pressable
-                        style={({ hovered }) => [styles.buttonWrapper, hovered && styles.buttonHoverEffect]}
-                    >
-                        <Button
-                            title={getButtonLabel(category.toLowerCase(), true)}
-                            variant='secondary'
-                            size='big'
-                            onPress={() => handleToggleCategory(category, true)}
-                        />
-                    </Pressable>
-                    <Pressable
-                        style={({ hovered }) => [styles.buttonWrapper, hovered && styles.buttonHoverEffect]}
-                    >
-                        <Button
-                            title={getButtonLabel(category.toLowerCase(), false)}
-                            variant='secondary'
-                            size='big'
-                            onPress={() => handleToggleCategory(category, false)}
-                        />
-                    </Pressable>
+                    <Button
+                        title={getButtonLabel(category.toLowerCase(), true)}
+                        variant='secondary'
+                        size='big'
+                        onPress={() => handleToggleCategory(category, true)}
+                    />
+                    <Button
+                        title={getButtonLabel(category.toLowerCase(), false)}
+                        variant='secondary'
+                        size='big'
+                        onPress={() => handleToggleCategory(category, false)}
+                    />
                 </View>
             </View>
             <TragosList
@@ -87,14 +78,5 @@ const styles = StyleSheet.create({
     categoryButtons: {
         flexDirection: 'row',
         gap: 10,
-    },
-    buttonWrapper: {
-        borderRadius: 4,
-    },
-    buttonHoverEffect: {
-        shadowColor: '#FFD700',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.9,
-        shadowRadius: 10,
     },
 });

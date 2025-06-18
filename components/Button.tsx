@@ -1,5 +1,7 @@
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Pressable } from 'react-native';
+import React from 'react';
 import { Colors } from '@/constants/Colors';
+import { useState } from 'react';
 
 type Variant = 'primary' | 'secondary';
 type Size = 'default' | 'small' | 'big';
@@ -9,12 +11,14 @@ interface ButtonProps {
     onPress: () => void;
     variant?: Variant;
     size?: Size;
+    isCentered?: boolean
 }
 export const Button = ({
     title,
     onPress,
     variant = 'primary',
     size = 'default',
+    isCentered = false,
 }: ButtonProps) => {
     // Variantes de colores
     const variants = {
@@ -29,7 +33,6 @@ export const Button = ({
         },
         secondary: {
             container: {
-                backgroundColor: Colors.dark.background,
                 borderColor: Colors.dark.primary,
             },
             text: {
@@ -68,16 +71,25 @@ export const Button = ({
         }
     }
     return (
-        <TouchableOpacity
-            onPress={onPress}
-            style={[styles.container, variants[variant].container, sizes[size].container]}
+        <Pressable
+            style={({ hovered }) => [hovered && styles.buttonHoverEffect, hovered && styles.hoveredSecondary, isCentered && styles.centeredButton]
+            }
         >
-            <Text style={[styles.text, variants[variant].text, sizes[size].text]}>{title}</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+                onPress={onPress}
+                style={[styles.container, variants[variant].container, sizes[size].container]}
+            >
+                <Text style={[styles.text, variants[variant].text, sizes[size].text]}>{title}</Text>
+            </TouchableOpacity>
+
+        </Pressable >
     );
 }
 
 const styles = StyleSheet.create({
+    centeredButton: {
+        marginInline: 'auto',
+    },
     container: {
         borderWidth: 1,
         borderStyle: 'solid',
@@ -87,5 +99,14 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         marginBlock: 'auto',
         textAlign: 'center',
-    }
+    },
+    buttonHoverEffect: {
+        shadowColor: '#FFD700',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.9,
+        shadowRadius: 10,
+    },
+    hoveredSecondary: {
+        backgroundColor: Colors.dark.black,
+    },
 });

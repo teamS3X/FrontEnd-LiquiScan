@@ -26,6 +26,7 @@ export default function Lists() {
     const [selectedListId, setSelectedListId] = useState<number | null>(null);
     const [selectedList, setSelectedList] = useState<number[]>([]);
     const [newListName, setNewListName] = useState('');
+    const [isLoaded, setIsLoaded] = useState(false);
     const [listDrinkRelation, setListDrinkRelation] = useState([]);
 
     const fetchLists = async () => {
@@ -44,6 +45,7 @@ export default function Lists() {
                     })
                 );
                 setLists(listsWithItems);
+                setIsLoaded(true);
             } catch (error) {
                 console.error("Failed to fetch lists by admin:", error);
             }
@@ -53,9 +55,8 @@ export default function Lists() {
     const fetchListDrinkRelation = async () => {
         if (selectedListId != null) {
             const listDrinks = await fetchAlcoholListRelationsByListId(selectedListId);
-            const newList = listDrinks.filter((relation: any) => relation.idlista === selectedListId);
             setListDrinkRelation(listDrinks);
-            const alcoholIds = newList.map((item: any) => item.idalcohol);
+            const alcoholIds = listDrinks.map((item: any) => item.idalcohol);
             setSelectedList(alcoholIds);
         } else {
             setSelectedList([]);
@@ -149,41 +150,56 @@ export default function Lists() {
     }, [selectedListId]);
 
     return (
-        <>
+        <View style={styles.mainContainer}>
             <View style={styles.topBarContainer}>
-                <Dropdown placeholder='Selecciona una lista' lists={lists} selectedId={selectedListId} onSelect={setSelectedListId} />
-                <View style={styles.topBarBottom}>
-                    <Text style={styles.countText}> SELECCIONADOS: {selectedList.length}</Text>
-                    <Button title='Seleccionar todos' variant='secondary' size='small' onPress={handleSelectAll} />
-                    <Button title='Deseleccionar todos' variant='secondary' size='small' onPress={handleDeselectAll} />
-                </View>
-                <Pin />
-            </View>
-            <ScrollView style={styles.container}>
-                {categories.map((c: string, index: number) => (
-                    <View key={c} style={styles.sectionWrapper}>
-                        {index !== 0 && <View style={styles.sectionDivider} />}
-                        <CategorySection
-                            category={c}
-                            drinkslist={drinkslist}
-                            selectedList={selectedList}
-                            updateSelectedList={updateSelectedList}
-                            getButtonLabel={getButtonLabel}
-                            handleToggleCategory={handleToggleCategory}
-                        />
+                {isLoaded && <>
+                    <Dropdown placeholder='Selecciona una lista' lists={lists} selectedId={selectedListId} onSelect={setSelectedListId} />
+                    <View style={styles.selectionContainer}>
+                        <Text style={styles.countText}> SELECCIONADOS: {selectedList.length}</Text>
+                        <View style={styles.topButtonContainer}>
+                            <Button title='seleccionar Todos' size="small" variant='secondary' onPress={handleSelectAll} />
+                            <Button title='Deseleccionar todos' size="small" variant='secondary' onPress={handleDeselectAll} />
+                        </View>
                     </View>
-                ))}
-            </ScrollView>
-            {selectedListId !== null ? (
-                <View style={styles.buttonContainer}>
-                    <Button title='Guardar Lista' size='big' onPress={() => console.log('guardar')} />
-                    <Button title='Eliminar lista' size='big' variant='secondary' onPress={handleDeleteList} />
+                    <Pin />
+                </>}
+            </View >
+
+            {!isLoaded ? (
+                <View style={styles.loadingOverlay}>
+                    <Text style={styles.loadingText}>Cargando...</Text>
                 </View>
             ) : (
-                <View style={styles.buttonContainer}>
-                    <Button title="Crear lista" onPress={() => { setShowModal(true) }} size='big' />
-                </View>
+                <>
+                    <ScrollView style={styles.contentScrollView}> 
+                        {categories.map((c: string, index: number) => (
+                            <View key={c} style={styles.sectionWrapper}>
+                                {index !== 0 && <View style={styles.sectionDivider} />}
+                                <CategorySection
+                                    category={c}
+                                    drinkslist={drinkslist}
+                                    selectedList={selectedList}
+                                    updateSelectedList={updateSelectedList}
+                                    getButtonLabel={getButtonLabel}
+                                    handleToggleCategory={handleToggleCategory}
+                                />
+                            </View>
+                        ))}
+                    </ScrollView>
+
+                    {selectedListId !== null ? (
+                        <View style={styles.buttonContainer}>
+                            <Button title='Guardar Lista' size='big' onPress={() => console.log('guardar')} />
+                            <Button title='Eliminar lista' size='big' variant='secondary' onPress={handleDeleteList} />
+                        </View>
+                    ) : (
+                        <View style={styles.buttonContainer}>
+                            <Button title="Crear lista" onPress={() => { setShowModal(true) }} size='big' />
+                        </View>
+                    )}
+                </>
             )}
+
             {showModal && (
                 <View style={[styles.modalContainer, { width: width, height: height }]}>
                     <View style={styles.modal}>
@@ -196,46 +212,77 @@ export default function Lists() {
                     </View>
                 </View>
             )}
-        </>
-    );
-}
+        </View>
+    );}
 
 const styles = StyleSheet.create({
-    container: {
+    mainContainer: {
+        flex: 1, 
         backgroundColor: Colors.dark.background,
+    },
+    loadingOverlay: {
+        position: 'absolute', 
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: Colors.dark.background,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10, 
+    },
+    loadingText: {
+        color: Colors.dark.text, // Texto blanco o claro para contraste
+        fontSize: 20,
     },
     topBarContainer: {
         width: '100%',
         height: 110,
         backgroundColor: Colors.dark.background,
         display: 'flex',
-        justifyContent: 'center',
         gap: 10,
         paddingInline: 60,
         position: 'relative',
         borderBottomWidth: 1,
         borderColor: Colors.dark.text,
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
     },
     topBarBottom: {
         display: 'flex',
         flexDirection: 'row',
         gap: 10,
     },
-    countText: {
-        color: Colors.dark.text,
+    selectionContainer:{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        
+    gap:20,
     },
-    buttonContainer: {
-        height: 80,
-        backgroundColor: Colors.dark.background,
+    countText: {
+        color: Colors.dark.text
+    },
+    topButtonContainer: {
         display: 'flex',
         flexDirection: 'row',
         justifyContent: 'center',
+        gap: 10,
+        marginTop: 5,
+    }, 
+    buttonContainer: {
+        height: 80,
+        justifyContent: 'center',
+        flexDirection: 'row',
         alignItems: 'center',
         gap: 20,
-        borderTopWidth: 1,
         borderColor: Colors.dark.text,
+        borderTopWidth: 1,
+        backgroundColor:Colors.dark.background,
     },
     modalContainer: {
+        height: 80,
         backgroundColor: Colors.dark.background,
         position: 'fixed',
         top: 0,
@@ -274,14 +321,14 @@ const styles = StyleSheet.create({
         gap: 30,
     },
     sectionWrapper: {
-    marginTop: 0,
-    marginBottom: 0,
-    paddingTop: 0,
-    paddingBottom: 0,
-},
-sectionDivider: {
-    height: 1,
-    backgroundColor: Colors.dark.text,
-    marginVertical: 0, // quita espacio arriba y abajo
-},
+        marginTop: 0,
+        marginBottom: 0, 
+        paddingTop: 0,
+       paddingBottom: 0,
+    },
+    sectionDivider: {
+        height: 1,
+        backgroundColor: Colors.dark.text,
+        marginVertical: 0,
+    },
 });

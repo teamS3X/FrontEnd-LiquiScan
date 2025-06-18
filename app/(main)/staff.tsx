@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/Button';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchBartendersPorAdminConBarra, createBartender, updateBartender, deleteBartender } from '@/utils/BartenderService';
+import {Pin} from '@/components/Pin'
 
 export default function Staff() {
     const [staff, setStaff] = useState<{ id: number; name: string }[]>([]);
@@ -83,6 +84,7 @@ export default function Staff() {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Personal</Text>
+            <Pin/>
             <ScrollView style={styles.barsContainer}>
                 {staff.map((item, index) => (
                     <StaffItem

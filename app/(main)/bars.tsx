@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {createBarraValidando, updateBarra } from '@/utils/barService';
 import API_URL from '@/constants/Api';
 
+import { Pin } from '@/components/Pin';
 
 interface Lista {
   id: number;
@@ -113,6 +114,7 @@ const handleSaveBar = async () => {
             <Text style={styles.title}>
                 Barras
             </Text>
+<Pin />
             <ScrollView style={styles.barsContainer}>
                 {barras.map((item, index) => (
                     <BarItem
@@ -180,7 +182,7 @@ const styles = StyleSheet.create({
     buttonContainer: {
         height: 80,
         display: 'flex',
-        flexDirection: 'row',
+        flexdirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         gap: 20,

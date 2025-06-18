@@ -42,13 +42,13 @@ export const StaffItem = ({
             <View style={styles.buttonContainer}>
                 {isEditing ? (
                     <>
-                        <Button title="Guardar" variant="primary" size="small" onPress={handleSave} />
-                        <Button title="Cancelar" variant="secondary" size="small" onPress={handleCancel} />
+                        <Button title="Guardar" variant="primary" onPress={handleSave} />
+                        <Button title="Cancelar" variant="secondary" onPress={handleCancel} />
                     </>
                 ) : (
                     <>
-                        <Button title="Editar" variant="secondary" size="small" onPress={() => setIsEditing(true)} />
-                        <Button title="Eliminar" variant="secondary" size="small" onPress={onDelete} />
+                        <Button title="Editar" variant="secondary" onPress={() => setIsEditing(true)} />
+                        <Button title="Eliminar" variant="secondary" onPress={onDelete} />
                     </>
                 )}
             </View>
@@ -58,7 +58,6 @@ export const StaffItem = ({
 
 const styles = StyleSheet.create({
     container: {
-        height: 40,
         borderColor: Colors.dark.text,
         borderTopWidth: 1,
         borderLeftWidth: 1,
@@ -68,9 +67,10 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingInline: 10,
+        paddingBlock: 10,
     },
     title: {
-        fontSize: 15,
+        fontSize: 16,
         textAlign: 'left',
         color: Colors.dark.text,
     },

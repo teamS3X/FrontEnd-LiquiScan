@@ -3,6 +3,7 @@ import { Colors } from '@/constants/Colors';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAdminPin, AdminPinData, regeneratePin } from '@/utils/PinService';
+import { Button } from '@/components/Button';
 
 export const Pin = () => {
     const [pin, setPin] = useState<number | null>(null);
@@ -43,25 +44,18 @@ export const Pin = () => {
     return (
         <View style={styles.container}>
             <Text style={styles.text}>PIN: {pin !== null ? pin : 'N/A'}</Text>
-            <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
-                onPress={handleRegeneratePin}
-                disabled={loading}
-            >
-                <Text style={styles.buttonText}>Regenerar PIN</Text>
-            </TouchableOpacity>
+            <Button title="Regenerar" variant="secondary" size='small' onPress={handleRegeneratePin} />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        width: 120,
-        height: 110,
         position: 'absolute',
-        top: 10,
+        top: 45,
         right: 60,
         display: 'flex',
+        flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         gap: 10,

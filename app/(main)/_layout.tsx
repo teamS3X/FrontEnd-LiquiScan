@@ -27,6 +27,7 @@ function CustomDrawerContent(props: any) {
                 onPress={handleLogout}
                 variant='secondary'
                 size='default'
+                isCentered={true}
             />
         </DrawerContentScrollView>
     );
@@ -65,7 +66,7 @@ export default function MainLayout() {
                 headerShown: false,
                 drawerStyle: {
                     backgroundColor: Colors.dark.background,
-                    width: 200,
+                    width: 230,
                     margin: 0,
                     display: 'flex',
                     borderStyle: 'solid',
@@ -74,11 +75,13 @@ export default function MainLayout() {
                 drawerItemStyle: {
                     borderRadius: 0,
                 },
-                drawerActiveTintColor: Colors.dark.softHighlight,
-                drawerActiveBackgroundColor: Colors.dark.softHighlight,
-                drawerInactiveTintColor: Colors.dark.softHighlight,
+                drawerActiveBackgroundColor: Colors.dark.softHighlight, // Fondo para el item seleccionado (gris claro)
+                drawerInactiveBackgroundColor: Colors.dark.background, // Fondo para el item no seleccionado (negro)
+                drawerActiveTintColor: Colors.dark.background, // Color del texto del item seleccionado (negro para contraste con el gris claro)
+                drawerInactiveTintColor: Colors.dark.text, // Color del texto del item no seleccionado (tu Color.dark.text, asumiendo que es un color claro para contraste con el fondo negro)
 
-                drawerLabel: () => {
+
+                drawerLabel: ({ focused }) => {
                     const title: Record<string, string> = {
                         lists: 'Listas',
                         bars: 'Barras',
@@ -90,8 +93,8 @@ export default function MainLayout() {
                             color: Colors.dark.text,
                             fontSize: 16,
                             textTransform: 'uppercase',
-                            height: 30,
                             lineHeight: 30,
+                            width: 230,
                         }}>
                             {title[route.name] ?? route.name}
                         </Text>
