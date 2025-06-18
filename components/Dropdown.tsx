@@ -61,7 +61,7 @@ export const Dropdown = ({
                             style={({ hovered }) => [{ backgroundColor: Colors.dark.softHighlight }, hovered && { backgroundColor: Colors.dark.black }]}
                         >
                             <TouchableOpacity
-                                key={-1}
+                                key={'create-new-list-item'}
                                 style={styles.createList}
                                 onPress={() => handleSelect(null)}
                             >
@@ -72,9 +72,9 @@ export const Dropdown = ({
                             {lists.map((list) => (
                                 <Pressable
                                     style={({ hovered }) => [hovered && { backgroundColor: Colors.dark.black }]}
+                                    key={list.id}
                                 >
                                     <TouchableOpacity
-                                        key={list.id}
                                         style={styles.item}
                                         onPress={() => handleSelect(list.id)}
                                     >
