@@ -5,6 +5,8 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 import { saveBartenderSession, BartenderSession } from '@/utils/session'; 
 import API_URL from '@/constants/Api'; 
 import { Colors } from '@/constants/Colors';
+import { Button } from '@/components/Button'
+import { Input } from '@/components/Input';
         
         
 export default function BartenderLoginScreen() {
@@ -53,77 +55,67 @@ export default function BartenderLoginScreen() {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Acceso Bartender</Text>
-            <TextInput
-                style={styles.input}
-                placeholder="Nombre de Usuario"
-                placeholderTextColor="#999"
-                value={nombre}
-                onChangeText={setNombre}
-                autoCapitalize="none"
+    <View style={styles.container}>
+        <Text style={styles.title}>Acceso Bartender</Text>
+        <View style={styles.inputContainer}>
+            <Input 
+                placeholder='Nombre de Usuario' 
+                value={nombre} 
+                onChange={setNombre}
+                // autoCapitalize="none" // Esta prop estaría dentro del componente Input
             />
-            <TextInput
-                style={styles.input}
-                placeholder="PIN del Administrador"
-                placeholderTextColor="#999"
-                value={pin}
-                onChangeText={setPin}
-                secureTextEntry
-                keyboardType="numeric"
+            <Input 
+                placeholder='PIN del Administrador' 
+                variant='password' // Usa la variante para ocultar el texto
+                value={pin} 
+                onChange={setPin}
+                keyboardType="numeric" // El componente Input debería aceptar esta prop
             />
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
-            <TouchableOpacity style={styles.button} onPress={handleBartenderLogin} disabled={loading}>
-                <Text style={styles.buttonText}>{loading ? 'Ingresando...' : 'Ingresar'}</Text>
-            </TouchableOpacity>
         </View>
-    );
+        {error &&
+            <Text style={styles.textError}>{error}</Text>
+        }
+        <View style={{ marginTop: 50, display: 'flex', alignItems: 'center' }}>
+            <Button 
+                title={loading ? 'Ingresando...' : 'Ingresar'} 
+                onPress={handleBartenderLogin} 
+                size='big' 
+                disabled={loading}
+            />
+        </View>
+    </View>
+);
 }
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        justifyContent: 'center',
-        padding: 20,
         backgroundColor: Colors.dark.background,
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        marginBottom: 30,
-        textAlign: 'center',
-        color: '#FFFFFF',
-    },
-    input: {
-        height: 50,
-        backgroundColor: '#2C2C2C',
-        marginBottom: 15,
-        paddingHorizontal: 15,
-        fontSize: 16,
-        color: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#444',
-    },
-    button: {
-        backgroundColor: Colors.dark.primary,
-        height: 50,
+        height: '100%',
+        display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 10,
+        paddingHorizontal: 20, // Añadido para que los elementos no toquen los bordes
     },
-    buttonText: {
-        color: Colors.dark.background,
-        fontSize: 16,
+    title: {
+        fontSize: 24,
         fontWeight: 'bold',
-    },
-    link: {
-        color: '#007AFF',
+        color: Colors.dark.text, // Usando color del tema
+        marginBottom: 40,
         textAlign: 'center',
-        marginTop: 20,
     },
-    errorText: {
-        color: '#FF3B30',
+    inputContainer: {
+        height: 80, // Altura para dos inputs
+        width: '100%', // Asegura que ocupe el ancho disponible
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20, // Espacio antes del mensaje de error
+    },
+    textError: {
+        color: Colors.dark.error,
+        textTransform: 'uppercase',
+        paddingVertical: 10,
+        fontWeight: '600',
         textAlign: 'center',
-        marginBottom: 10,
-    }
+    },
 });
